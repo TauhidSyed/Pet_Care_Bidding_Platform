@@ -2,5 +2,5 @@
 WebDev Project.
 
 Current branches:
-J
+J (HTML-focused)
 Tauhid
