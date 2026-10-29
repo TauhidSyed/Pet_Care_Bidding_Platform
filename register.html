@@ -11,7 +11,16 @@
         <!-- EXTRA 1B: 
             We could add a radio button toggle for owner vs provider which toggles everything after the password entry,
             then add a few more things for care-providers. 
-            Also, if we did the ""
+            Also, if we did the "Im a Pet Owner" and "Im a Care Provider" on index, then maybe it can toggle a switch which could
+            show/hide
+
+            EXTRA 4:
+            We could add a thing that makes you enter the password twice, then checks if they are equal. This would allow us to 
+            change the type to password instead of text.
+            
+            Extra 5:
+            Alternatively, we make it natively type=password, then have a button that changes it to text (like the eye button that
+            shows and hides the password when you click/hold it).
         -->
         <form class="" id="">
             <div class="" id="">
@@ -20,12 +29,18 @@
             </div>
             <div class="" id="">
                 <label for="email" class="">Email:</label>
-                <input type="text" class="" id="email" placeholder="Please enter your email">
+                <input type="email" class="" id="email" placeholder="Please enter your email">
             </div>
             <div class="" id="">
                 <label for="password" class="">Password:</label>
                 <input type="text" class="" id="password" placeholder="Please enter your password">         
             </div>
+            <!-- EXAMPLE of thing you hide if you pick "Im a Pet Owner" and shown if you pick "Im a Care Provider"
+            <div class="" id="">
+                <label for="service" class="">Service:</label>
+                <input type="text" class="" id="service" placeholder="Please describe your service">         
+            </div>
+            -->
             <button type="submit" class="" id="">Register</button>
             <!-- If successful, the register button puts their data into the database, then links them to /login.html -->
         </form>
