@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html> <!-- Landing page -->
+<html> <!-- Landing page (BOTH; NO-AUTH) -->
     <head>
         <title>Welcome!</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -11,6 +11,12 @@
             We could separate the register links, like "Im a Pet Owner" and "Im a Care Provider", and if possible make that 
             toggle a variable from either 0 or 1, which could toggle the form on registration.
             (Read the comment on registration to understand)
+
+            EXTRA 5 (Might be annoying to implement):
+            Could do a "Check Available Requests" as a sort of teaser so potential care providers can see available requests,
+            this would link to /browse-requests.html, but when they click the button to view the request, they first have to make
+            an account (since they haven't yet), so it would take them to /register.html, then it would take them to 
+            /request-details.html?id=XXXX to actually view the request details.
         -->
         <h1 class="" id="">Pet Care Bidding Platform</h1>
         <h2 class="" id="">What We Do</h2>
