@@ -11,97 +11,25 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="container">
-      <a href="owner-dashboard.html">Back to Dashboard</a>
+    <!-- EXTRA 1A:
+            We could separate the register links, like "Im a Pet Owner" and "Im a Care Provider", and if possible make that 
+            toggle a variable from either 0 or 1, which could toggle the form on registration.
+            (Read the comment on registration to understand)
 
-      <h1>Create a Care Request</h1>
-
-      <form id="create-request-form">
-        <div class="row">
-          <div class="col-12 col-md-6">
-            <label for="pet">Your pet</label><br />
-            <select id="pet" name="petId" required>
-              <option value="">Choose a pet</option>
-              <option value="1">Max — Dog</option>
-              <option value="2">Luna — Cat</option>
-            </select>
-          </div>
-
-          <div class="col-12 col-md-6">
-            <label for="service">Required service</label><br />
-            <select id="service" name="service" required>
-              <option value="">Choose a service</option>
-              <option value="sitting">Pet sitting</option>
-              <option value="walking">Pet walking</option>
-              <option value="feeding">Pet feeding</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-12 col-md-6">
-            <label for="start-date">Service starts</label><br />
-            <input
-              type="datetime-local"
-              id="start-date"
-              name="startDate"
-              required
-            />
-          </div>
-
-          <div class="col-12 col-md-6">
-            <label for="end-date">Service ends</label><br />
-            <input
-              type="datetime-local"
-              id="end-date"
-              name="endDate"
-              required
-            />
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-12 col-md-6">
-            <label for="budget">Total budget (AED)</label><br />
-            <input
-              type="number"
-              id="budget"
-              name="budget"
-              min="0.01"
-              step="0.01"
-              required
-            />
-          </div>
-
-          <div class="col-12 col-md-6">
-            <label for="deadline">Bidding deadline</label><br />
-            <input
-              type="datetime-local"
-              id="deadline"
-              name="deadline"
-              required
-            />
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-12">
-            <label for="instructions"> Care instructions (optional) </label
-            ><br />
-            <textarea id="instructions" name="instructions" rows="3"></textarea>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-12">
-            <button type="submit" class="btn btn-primary">
-              Create Request
-            </button>
-          </div>
-        </div>
-      </form>
-    </main>
-
-    <script src="script.js"></script>
+            EXTRA 5 (Might be annoying to implement):
+            Could do a "Check Available Requests" as a sort of teaser so potential care providers can see available requests,
+            this would link to /browse-requests.html, but when they click the button to view the request, they first have to make
+            an account (since they haven't yet), so it would take them to /register.html, then it would take them to 
+            /request-details.html?id=XXXX to actually view the request details.
+        -->
+    <h1 class="" id="">Pet Care Bidding Platform</h1>
+    <h2 class="" id="">What We Do</h2>
+    <p class="" id="">Someone who feels like it go yap here about something.</p>
+    <nav class="" id="">
+      <!-- Navbar implementation, maybe bring it to the top like lab 3 -->
+      <a class="" id="" href="/login.html">Login</a>
+      <a class="" id="" href="/register.html">Register</a>
+    </nav>
+    <script></script>
   </body>
 </html>
