@@ -2,20 +2,24 @@
   background-color: #f7f7f2;
   color: #173810;
 }
+
 .create-request-page main {
   max-width: 800px;
   margin: 30px auto;
 }
+
 #create-request-form {
   background: white;
   padding: 24px;
   border: 1px solid #e5d084;
   border-radius: 10px;
 }
+
 #create-request-form label {
   margin-bottom: 6px;
   margin-top: 16px;
 }
+
 #create-request-form input,
 #create-request-form select,
 #create-request-form textarea {
@@ -23,8 +27,86 @@
   padding: 8px;
   border: 1px solid #789071;
 }
+
 #create-request-form .btn-primary {
   background: #173810;
   border-color: #173810;
   margin-top: 20px;
+}
+.login-register-page {
+  background-color: #f7f7f2;
+  color: #173810;
+}
+
+.login-register-page h1 {
+  text-align: center;
+  margin: 30px auto;
+}
+
+#login-form {
+  max-width: 480px;
+  margin: 30px auto;
+  background: white;
+  padding: 24px;
+  border: 1px solid #e5d084;
+  border-radius: 10px;
+}
+
+#login-form label {
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+
+#login-form input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #789071;
+}
+
+#login-form .btn-primary {
+  background: #173810;
+  border-color: #173810;
+  margin-top: 20px;
+}
+
+#register-form {
+  max-width: 480px;
+  margin: 30px auto;
+  background: white;
+  padding: 24px;
+  border: 1px solid #e5d084;
+  border-radius: 10px;
+}
+
+#register-form label {
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+
+#register-form input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #789071;
+}
+
+#register-form .register-radio-options input {
+  width: auto;
+  padding: 0px;
+  margin-right: 5px;
+}
+
+#register-form .register-radio-options label {
+  margin-right: 15px;
+}
+
+#register-form .btn-primary {
+  background: #173810;
+  border-color: #173810;
+  margin-top: 20px;
+  transition: 0.3s;
+}
+
+#register-form .btn-primary:hover {
+  background-color: #e80000;
+  color: white;
 }

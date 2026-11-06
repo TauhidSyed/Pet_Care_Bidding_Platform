@@ -1,6 +1,6 @@
 <!doctype html>
 <html>
-  <!-- Form for creating requests (PET OWNERS; AUTH) -->
+  <!-- J : Form for creating requests (PET OWNERS; AUTH) -->
   <head>
     <title>New Request</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -44,12 +44,22 @@
         <div class="row">
           <div class="col-12 col-md-6">
             <label for="start-time">Service starts at:</label>
-            <input type="datetime" id="start-time" name="startTime" required />
+            <input
+              type="datetime-local"
+              id="start-time"
+              name="startTime"
+              required
+            />
           </div>
 
           <div class="col-12 col-md-6">
             <label for="end-time">Service ends at:</label>
-            <input type="datetime" id="end-time" name="endTime" required />
+            <input
+              type="datetime-local"
+              id="end-time"
+              name="endTime"
+              required
+            />
           </div>
         </div>
 
@@ -85,7 +95,7 @@
           </div>
         </div>
       </form>
-      <!-- The request is then showed in owner-requests.html if its confirmed -->
+      <!-- J : The request is then showed in owner-requests.html if its confirmed -->
       <script></script>
     </body>
   </main>
