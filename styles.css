@@ -114,10 +114,10 @@ form input, select, textarea {
 /*-- Registration page: ---*/
 #register-form .register-radio-options input {
   width: auto;
-  padding: 0px;
-  margin-right: 5px;
+  padding: 0;
+  margin-right: 0.3125rem;
 }
 #register-form .register-radio-options label {
-  margin-right: 15px;
+  margin-right: 1rem;
 }
 /*----------- X -----------*/
