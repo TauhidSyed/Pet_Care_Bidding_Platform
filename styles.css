@@ -45,8 +45,9 @@ form input, select, textarea {
   font-size: 1rem;
   font-weight: 600;
   display: inline-block;
+  /* J: Since its on a div, without this it would be as wide as the whole
+  screen so display: inline-block makes it only as wide as the text. */
 }
-
 .main-heading {
   margin: 0.5rem auto;
   font-weight: 800;
