@@ -1,62 +1,58 @@
-/*--- Default Format: ----*/
+/*---- Default Format: ----*/
 body {
   background-color: #f7f7f2;
   color: #173810;
 }
-/*--- Default Button: ----*/
+h1 {
+  text-align: center;
+  margin: 1.875rem auto;
+}
+/*---- Default Button: ----*/
 .btn-primary {
   background: #173810;
-  border-color: #173810; 
+  border-color: #173810;   
   color: white;
+  transition: 0.3s;
+  margin-top: 1.25rem;
 }
-/*---- Default Form: -----*/
+.btn-primary:hover {
+  background-color: #378926;
+}
+/*----- Default Form: -----*/
 form {
   background: white;
-  border: 1px solid #e5d084;
-  border-radius: 10px;
+  border: 0.0625rem solid #e5d084;
+  border-radius: 0.625rem;
   padding: 1.5rem;
-
   max-width: 30rem;
-  margin: 30px auto;
+  margin: 1.875rem auto;
 }
-/*- Default Form Input: --*/
+form label {
+  margin-bottom: 0.375rem;
+  margin-top: 1rem;
+}
 form input, select, textarea {
-  border: 1px solid #789071;
+  border: 0.625rem solid #789071;
   width: 100%;
   padding: 0.5rem;
 }
-/*-- Main-Landing Page: --*/
+/*-- Main-Landing Page: ---*/
 
 
-/*- Create Request Page: -*/
+
+
+/*- Create Request Page: --*/
 .create-request-page main {
   max-width: 50rem;
-  margin: 30px auto;
+  margin: 1.875rem auto;
+}
+.create-request-page h1 {
+  text-align: left;
 }
 #create-request-form {
   max-width: 50rem;
 }
-#create-request-form label {
-  margin-bottom: 6px;
-  margin-top: 2rem;
-}
-#create-request-form .btn-primary {
-  margin-top: 20px;
-}
-/*-- Registration page: --*/
-.register-page h1 {
-  text-align: center;
-  margin: 30px auto;
-}
-#register-form {
-  max-width: 30rem;
-  margin: 30px auto;
-
-}
-#register-form label {
-  margin-bottom: 6px;
-  margin-top: 2rem;
-}
+/*-- Registration page: ---*/
 #register-form .register-radio-options input {
   width: auto;
   padding: 0px;
@@ -65,26 +61,4 @@ form input, select, textarea {
 #register-form .register-radio-options label {
   margin-right: 15px;
 }
-#register-form .btn-primary {
-  margin-top: 20px;
-  transition: 0.3s;
-}
-#register-form .btn-primary:hover {
-  background-color: #378926;
-}
-/*----- Login Page: ------*/
-.auth-page h1 {
-  text-align: center;
-  margin: 30px auto;
-}
-#login-form {
-  max-width: 30rem;
-  margin: 30px auto;
-}
-#login-form label {
-  margin-bottom: 6px;
-  margin-top: 1rem;
-}
-#login-form .btn-primary {
-  margin-top: 20px;
-}
+/*----------- X -----------*/
