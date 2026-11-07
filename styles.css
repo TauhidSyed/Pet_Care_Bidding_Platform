@@ -1,112 +1,64 @@
-.create-request-page {
+/*---- Default Format: ----*/
+body {
   background-color: #f7f7f2;
   color: #173810;
 }
-
-.create-request-page main {
-  max-width: 800px;
-  margin: 30px auto;
-}
-
-#create-request-form {
-  background: white;
-  padding: 24px;
-  border: 1px solid #e5d084;
-  border-radius: 10px;
-}
-
-#create-request-form label {
-  margin-bottom: 6px;
-  margin-top: 16px;
-}
-
-#create-request-form input,
-#create-request-form select,
-#create-request-form textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #789071;
-}
-
-#create-request-form .btn-primary {
-  background: #173810;
-  border-color: #173810;
-  margin-top: 20px;
-}
-.login-register-page {
-  background-color: #f7f7f2;
-  color: #173810;
-}
-
-.login-register-page h1 {
+h1 {
   text-align: center;
-  margin: 30px auto;
+  margin: 1.875rem auto;
 }
-
-#login-form {
-  max-width: 480px;
-  margin: 30px auto;
-  background: white;
-  padding: 24px;
-  border: 1px solid #e5d084;
-  border-radius: 10px;
-}
-
-#login-form label {
-  margin-bottom: 6px;
-  margin-top: 16px;
-}
-
-#login-form input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #789071;
-}
-
-#login-form .btn-primary {
+/*---- Default Button: ----*/
+.btn-primary {
   background: #173810;
-  border-color: #173810;
-  margin-top: 20px;
+  border-color: #173810;   
+  color: white;
+  transition: 0.3s;
+  margin-top: 1.25rem;
 }
-
-#register-form {
-  max-width: 480px;
-  margin: 30px auto;
+.btn-primary:hover {
+  background-color: #378926;
+}
+/*----- Default Form: -----*/
+form {
   background: white;
-  padding: 24px;
-  border: 1px solid #e5d084;
-  border-radius: 10px;
+  border: 0.0625rem solid #e5d084;
+  border-radius: 0.625rem;
+  padding: 1.5rem;
+  max-width: 30rem;
+  margin: 1.875rem auto;
 }
-
-#register-form label {
-  margin-bottom: 6px;
-  margin-top: 16px;
+form label {
+  margin-bottom: 0.375rem;
+  margin-top: 1rem;
 }
-
-#register-form input {
+form input, select, textarea {
+  border: 0.625rem solid #789071;
   width: 100%;
-  padding: 8px;
-  border: 1px solid #789071;
+  padding: 0.5rem;
 }
+/*-- Main-Landing Page: ---*/
 
+
+
+
+/*- Create Request Page: --*/
+.create-request-page main {
+  max-width: 50rem;
+  margin: 1.875rem auto;
+}
+.create-request-page h1 {
+  text-align: left;
+}
+#create-request-form {
+  max-width: 50rem;
+}
+/*-- Registration page: ---*/
 #register-form .register-radio-options input {
   width: auto;
   padding: 0px;
   margin-right: 5px;
 }
-
 #register-form .register-radio-options label {
   margin-right: 15px;
 }
-
-#register-form .btn-primary {
-  background: #173810;
-  border-color: #173810;
-  margin-top: 20px;
-  transition: 0.3s;
-}
-
-#register-form .btn-primary:hover {
-  background-color: #e80000;
-  color: white;
-}
+/*----------- X -----------*/
