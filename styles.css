@@ -17,6 +17,7 @@ h1 {
 }
 .btn-primary:hover {
   background-color: #378926;
+  color: white;
 }
 /*----- Default Form: -----*/
 form {
@@ -32,15 +33,73 @@ form label {
   margin-top: 1rem;
 }
 form input, select, textarea {
-  border: 0.625rem solid #789071;
+  border: 0.0625rem solid #789071;
   width: 100%;
   padding: 0.5rem;
 }
-/*-- Main-Landing Page: ---*/
+/*-- Main-Landing Page: ---*/ 
+.brand-pill {
+  background-color: #e5d9a8;
+  padding: 0.375rem 1rem;
+  border-radius: 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  display: inline-block;
+}
 
-
-
-
+.main-heading {
+  margin: 0.5rem auto;
+  font-weight: 800;
+  /* J: Needed this instead of fw-bold since I wanted it to be more 
+  bold + apparently my text-style doesnt support fw-bolder */
+  font-size: 3rem;
+  letter-spacing: -1px;
+}
+.sub-heading {
+  font-size: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+.card {
+  background-color: white;
+  border: 0.0625rem solid #e5d084;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  /* J: Very slight shadow under box so those that like to put their 
+  phones right next to their face might see it XD */
+  transition: 0.2s ease-in-out;
+  /* J: ease-in-out just makes it accelerate-deccelerate instead of
+  going up and down at the same speed. */
+}
+.card:hover {
+  transform: translateY(-0.3rem);
+  /* J: Moves the card up by 0.3rem (5~ px). */
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+.card-title {
+  color: #173810;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+.features {
+  list-style: none;
+  padding: 0;
+}
+.features li {
+  padding: 0.75rem 0;
+  border-bottom: 0.0625rem solid #e5d084;
+  color: #173810;
+  font-size: 1rem;
+}
+.features li:last-child {
+  border-bottom: none;
+}
+.btn-login {
+  background-color: transparent;
+  color: #173810;
+  margin-top: 0;
+  padding: 0.5rem;
+}
 /*- Create Request Page: --*/
 .create-request-page main {
   max-width: 50rem;
