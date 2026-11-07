@@ -54,7 +54,6 @@ form input, select, textarea {
   /* J: Needed this instead of fw-bold since I wanted it to be more 
   bold + apparently my text-style doesnt support fw-bolder */
   font-size: 3rem;
-  letter-spacing: -1px;
 }
 .sub-heading {
   font-size: 1.25rem;
