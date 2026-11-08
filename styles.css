@@ -96,7 +96,8 @@ textarea {
 .features li:last-child {
   border-bottom: none;
 }
-.btn-clear { /* J: The clear background button for login/logout/etc. */
+.btn-clear {
+  /* J: The clear background button for login/logout/etc. */
   background-color: transparent;
   color: #173810;
   margin-top: 0;

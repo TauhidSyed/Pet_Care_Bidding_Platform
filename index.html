@@ -20,26 +20,37 @@
     <main class="container text-center pt-3">
       <div class="brand-pill">PetCare Bidding Platform</div>
       <h1 class="main-heading">The Right Care for Every Pet 🐾</h1>
-      <p class="sub-heading text-muted">A place for pet owners to find help and care providers to find work.</p>
+      <p class="sub-heading text-muted">
+        A place for pet owners to find help and care providers to find work.
+      </p>
       <!-- J: text-muted makes the text light-grey -->
-      <div class="row justify-content-center"> <!-- J: Self-explanatory -->
+      <div class="row justify-content-center">
+        <!-- J: Self-explanatory -->
         <!-- Owner card: -->
-        <div class="col-12 col-md-6 col-lg-5 mb-4"> 
+        <div class="col-12 col-md-6 col-lg-5 mb-4">
           <!-- J: mb is margin-bottom, whilst 4 is a key on bootstrap's table where 0=0rem, 1=0.25rem, 2=0.5rem, 
           3=1rem, 4=1.5rem, and 5=3rem. Its a bit more complicated than that but its fine to just know this. -->
-          <div class="card p-4 text-start h-100 d-flex flex-column"> 
+          <div class="card p-4 text-start h-100 d-flex flex-column">
             <!-- J: p=padding, h=height so h=100 is height=100%, text-start is a better version of left-aligned 
             since it aligns it based on the language (so arabic would start from the right). 
             d-flex applies display: flex so it turns this div into a flex-container, and flex-column changes 
             the default alignment of items to vertical since the default for flex-containers is horizontal. -->
             <h2 class="card-title">I am a Pet Owner</h2>
-            <p class="text-muted mb-4">Create pet profiles, post requests, compare bids, and choose a provider that best suits your needs.</p>
+            <p class="text-muted mb-4">
+              Create pet profiles, post requests, compare bids, and choose a
+              provider that best suits your needs.
+            </p>
             <ul class="features">
               <li>Create care requests</li>
               <li>Set dates and budget</li>
               <li>Review provider bids</li>
             </ul>
-            <a href="/register.html" class="btn btn-primary mt-auto align-self-start" id="">Register as an Owner</a>
+            <a
+              href="register.html"
+              class="btn btn-primary mt-auto align-self-start"
+              id=""
+              >Register as an Owner</a
+            >
             <!-- J: Since its parent (the div) is a flex-box, the button would stretch to fill the width of the card 
             by default, but with align-self-start, it makes it only be as wide as its text. The "auto" in mt-auto tells 
             the flexbox that if theres any available space left, put it there (mt in this case, so as a top margin). -->
@@ -49,19 +60,29 @@
         <div class="col-12 col-md-6 col-lg-5 mb-4">
           <div class="card p-4 text-start h-100 d-flex flex-column">
             <h2 class="card-title">I am a Care Provider</h2>
-            <p class="mb-4">Browse available requests, submit bids, and build your reviews page to be a renowned provider.</p>
+            <p class="mb-4">
+              Browse available requests, submit bids, and build your reviews
+              page to be a renowned provider.
+            </p>
             <ul class="features">
               <li>Find suitable requests</li>
               <li>Submit a proposed price</li>
               <li>Manage active bids</li>
             </ul>
-            <a href="/register.html" class="btn btn-primary mt-auto align-self-start" id="">Register as a Provider</a>
+            <a
+              href="register.html"
+              class="btn btn-primary mt-auto align-self-start"
+              id=""
+              >Register as a Provider</a
+            >
           </div>
         </div>
       </div>
       <div>
         <p class="text-muted mb-2">Already registered?</p>
-        <a href="/login.html" class="btn btn-primary btn-clear px-3" id="">Log In</a>
+        <a href="login.html" class="btn btn-primary btn-clear px-3" id=""
+          >Log In</a
+        >
       </div>
     </main>
     <script src="script.js"></script>
