@@ -106,7 +106,8 @@
   transition: 0.3s;
 }
 
-#register-form .btn-primary:hover {
+#register-form .btn-primary:hover,
+#login-form .btn-primary:hover {
   background-color: #e80000;
   color: white;
 }
