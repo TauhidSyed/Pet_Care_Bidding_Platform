@@ -11,12 +11,94 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <!-- EXTRA 3
-            Maybe allow the owners to see the reviews of care providers when they are checking 
-            their requests in /owner-requests.html? Dunno it seems kinda standard, right?
-         -->
-    <h1 class="" id="">Reviews</h1>
-    <button class="" id="">Log Out</button>
+    <main class="container pt-3">
+      <div class="text-center">
+        <div class="brand-pill">PetCare Bidding Platform</div>
+        <h1 class="main-heading">Reviews</h1>
+        <p class="sub-heading text-muted">
+          Feedback from completed care services.
+        </p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-12 col-lg-7">
+          <section class="card p-4">
+            <h2 class="card-title">Provider Reviews</h2>
+
+            <div class="card p-3 mb-3">
+              <h3 class="h5">
+                Tinker Manuel <span class="text-warning">★★★★★</span>
+              </h3>
+              <p class="mb-1">Cloud started speaking English.</p>
+              <p class="text-muted mb-0">Pet walking for Cloud</p>
+            </div>
+
+            <div class="card p-3">
+              <h3 class="h5">
+                Sam Sung. <span class="text-warning">★★★★☆</span>
+              </h3>
+              <p class="mb-1">Wow he was awesome.</p>
+              <p class="text-muted mb-0">Pet feeding for Rocks</p>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-12 col-lg-5">
+          <form id="review-form" novalidate>
+            <h2 class="card-title">Leave a Review</h2>
+
+            <div class="mb-3">
+              <label for="review-service" class="form-label">
+                Completed service:
+              </label>
+              <select class="form-select" id="review-service">
+                <option value="">Choose a service</option>
+                <option value="cloud-walk">Pet walking for Cloud</option>
+                <option value="rocky-feeding">Pet feeding for Rocky</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="review-rating" class="form-label">Rating:</label>
+              <select class="form-select" id="review-rating">
+                <option value="">Choose a rating</option>
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Good</option>
+                <option value="3">3 - Okay</option>
+                <option value="2">2 - Poor</option>
+                <option value="1">1 - Very poor</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="review-comment" class="form-label">Comment:</label>
+              <textarea
+                class="form-control"
+                id="review-comment"
+                rows="4"
+              ></textarea>
+            </div>
+
+            <p id="review-message" style="color: red"></p>
+
+            <button type="submit" class="btn btn-primary">Check Review</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
+        <a href="owner-dashboard.html" class="btn btn-primary btn-clear">
+          Owner Dashboard
+        </a>
+        <a href="provider-dashboard.html" class="btn btn-primary btn-clear">
+          Provider Dashboard
+        </a>
+        <a href="logged-out.html" class="btn btn-primary btn-clear">
+          Log Out
+        </a>
+      </div>
+    </main>
+
     <script src="script.js"></script>
   </body>
 </html>

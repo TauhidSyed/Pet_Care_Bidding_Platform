@@ -10,17 +10,91 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
+
+  <!-- Need to manage request and bid statuses, preventing new bids after a request is closed. -->
   <body>
-    <!-- Need to manage request and bid statuses, preventing new bids after a request is closed. -->
-    <h1 class="" id="">Your Requests</h1>
-    <h2 class="" id="">Ongoing Requests</h2>
-    <!-- This is filled up with from the /create-request.html page -->
-    <h2 class="" id="">Completed Requests</h2>
-    <!-- 
-            When opening a completed request, show a button that allows you to give a review, which takes
-            the logged request onto the /reviews.html
-        -->
-    <button class="" id="">Log Out</button>
+    <main class="container pt-3">
+      <div class="text-center">
+        <div class="brand-pill">PetCare Bidding Platform</div>
+        <h1 class="main-heading">Your Requests</h1>
+        <p class="sub-heading text-muted">
+          Review provider bids and completed services.
+        </p>
+      </div>
+
+      <h2 class="mb-3">Open Requests</h2>
+
+      <section class="card p-4 mb-4">
+        <h3 class="card-title">Pet walking for Cloud</h3>
+        <p>
+          <strong>Status:</strong>
+          <span id="owner-request-status">Open - accepting bids</span>
+        </p>
+        <p><strong>Service date:</strong> November 12, 2026</p>
+        <p><strong>Budget:</strong> AED 120</p>
+
+        <h4 class="h5 mt-3">Submitted Bids</h4>
+
+        <div class="card p-3 mb-3">
+          <p class="mb-1"><strong>Aisha K.</strong></p>
+          <p class="mb-1">AED 100</p>
+          <p class="text-muted mb-0">I can provide a calm one-hour walk.</p>
+        </div>
+
+        <div class="card p-3 mb-3">
+          <p class="mb-1"><strong>Sam R.</strong></p>
+          <p class="mb-1">AED 110</p>
+          <p class="text-muted mb-0">I have experience walking cats safely.</p>
+        </div>
+
+        <form id="choose-provider-form" novalidate>
+          <label for="winning-provider" class="form-label">
+            Choose a provider:
+          </label>
+          <select class="form-select" id="winning-provider">
+            <option value="">Choose a bid</option>
+            <option value="Aisha K.">Aisha K. - AED 100</option>
+            <option value="Sam R.">Sam R. - AED 110</option>
+          </select>
+
+          <p id="choose-provider-message" style="color: red"></p>
+
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="submit" class="btn btn-primary mt-0">
+              Select Provider
+            </button>
+            <button
+              type="button"
+              id="close-owner-request"
+              class="btn btn-outline-danger mt-0"
+            >
+              Close Request
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <h2 class="mb-3">Completed Requests</h2>
+
+      <section class="card p-4">
+        <h3 class="card-title">Pet feeding for Rocky</h3>
+        <p><strong>Status:</strong> Completed</p>
+        <p><strong>Provider:</strong> Sam R.</p>
+        <a href="reviews.html" class="btn btn-primary align-self-start">
+          Leave a Review
+        </a>
+      </section>
+
+      <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
+        <a href="owner-dashboard.html" class="btn btn-primary btn-clear">
+          Back to Dashboard
+        </a>
+        <a href="logged-out.html" class="btn btn-primary btn-clear">
+          Log Out
+        </a>
+      </div>
+    </main>
+
     <script src="script.js"></script>
   </body>
 </html>

@@ -83,6 +83,26 @@
           name="confirmPassword"
         />
       </div>
+      <div id="provider-fields" hidden>
+        <div>
+          <label for="provider-service">Service you provide:</label>
+          <select id="provider-service" name="providerService">
+            <option value="">Choose a service</option>
+            <option value="walking">Pet walking</option>
+            <option value="bathing">Pet bathing</option>
+            <option value="grooming">Pet grooming</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="provider-experience">Experience (optional):</label>
+          <textarea
+            id="provider-experience"
+            name="providerExperience"
+            placeholder="Describe your experience"
+          ></textarea>
+        </div>
+      </div>
 
       <p id="register-message" style="color: red"></p>
       <button type="submit" class="btn btn-primary">Register</button>
