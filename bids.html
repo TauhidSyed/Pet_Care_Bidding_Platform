@@ -1,18 +1,122 @@
-<!DOCTYPE html>
-<html> <!-- Current Bids (CARE PROVIDERS; AUTH) -->
-    <head>
-        <title>Current Bids</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
-        <link rel="stylesheet" href="styles.css" />
-    </head>
-    <body>
-        <!-- Need to manage request and bid statuses, preventing new bids after a request is closed. -->
-        <!-- Allow editing -->
-        <button type="submit" class="" id="">Edit Bid</button>
-        <button type="submit" class="" id="">Withdraw Bid</button> 
-        <!-- Withdrawing bid can only be done before request deadline. --> 
-        <button class="" id="">Log Out</button>
-        <script src="script.js"></script>
-    </body>
+<!doctype html>
+<html>
+  <!-- Current Bids (CARE PROVIDERS; AUTH) -->
+  <head>
+    <title>Current Bids</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container pt-3">
+      <div class="text-center">
+        <div class="brand-pill">PetCare Bidding Platform</div>
+        <h1 class="main-heading">My Bids</h1>
+        <p class="sub-heading text-muted">Review bids you have submitted.</p>
+      </div>
+
+      <div class="row g-4">
+        <div
+          class="col-12 col-lg-6 provider-bid-card"
+          data-deadline="2026-11-10T18:00:00"
+        >
+          <section class="card p-4 h-100">
+            <h2 class="card-title">Pet walking for Cloud</h2>
+            <p>
+              <strong>Status:</strong> <span class="bid-status">Pending</span>
+            </p>
+            <p><strong>Deadline:</strong> November 10, 2026 at 6:00 PM</p>
+
+            <form class="bid-edit-form" novalidate>
+              <div class="mb-3">
+                <label class="form-label">Your price (AED):</label>
+                <input
+                  type="number"
+                  class="form-control bid-price"
+                  value="100"
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Service description:</label>
+                <textarea class="form-control bid-description" rows="3">
+I can provide a calm one-hour walk.</textarea
+                >
+              </div>
+
+              <p class="bid-message" style="color: red"></p>
+
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="submit" class="btn btn-primary mt-0">
+                  Save Edit
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-danger mt-0 withdraw-bid"
+                >
+                  Withdraw Bid
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <div
+          class="col-12 col-lg-6 provider-bid-card"
+          data-deadline="2026-11-13T18:00:00"
+        >
+          <section class="card p-4 h-100">
+            <h2 class="card-title">Pet grooming for Rocky</h2>
+            <p>
+              <strong>Status:</strong> <span class="bid-status">Pending</span>
+            </p>
+            <p><strong>Deadline:</strong> November 13, 2026 at 6:00 PM</p>
+
+            <form class="bid-edit-form" novalidate>
+              <div class="mb-3">
+                <label class="form-label">Your price (AED):</label>
+                <input
+                  type="number"
+                  class="form-control bid-price"
+                  value="220"
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Service description:</label>
+                <textarea class="form-control bid-description" rows="3">
+I use gentle shampoo and work carefully.</textarea
+                >
+              </div>
+
+              <p class="bid-message" style="color: red"></p>
+
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="submit" class="btn btn-primary mt-0">
+                  Save Edit
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-danger mt-0 withdraw-bid"
+                >
+                  Withdraw Bid
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <a href="provider-dashboard.html" class="btn btn-primary btn-login">
+          Back to Dashboard
+        </a>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
 </html>

@@ -96,7 +96,7 @@ textarea {
 .features li:last-child {
   border-bottom: none;
 }
-.btn-clear { /* J: The clear background button for login/logout/etc. */
+.btn-login {
   background-color: transparent;
   color: #173810;
   margin-top: 0;
@@ -113,9 +113,6 @@ textarea {
 #create-request-form {
   max-width: 50rem;
 }
-#request-message {
-  white-space: pre-line;
-}
 /*-- Registration page: ---*/
 #register-form .register-radio-options input {
   width: auto;
@@ -124,29 +121,5 @@ textarea {
 }
 #register-form .register-radio-options label {
   margin-right: 1rem;
-}
-/*T: Had to add this to bug-fix the register-error msg not showing on different lines*/
-#register-message {
-  white-space: pre-line;
-}
-/*------ Login page: ------*/
-/*T: Had to add this to bug-fix the register-error msg not showing on different lines*/
-#login-message {
-  white-space: pre-line;
-}
-/*---- Pets.html page: ----*/
-/*T: Had to add this to bug-fix the register-error msg not showing on different lines*/
-#pet-message {
-  white-space: pre-line;
-}
-/*---- Dashboard Pages ----*/
-.stat-number {
-  font-size: 3rem;
-  line-height: 1;
-  /* J: The default line-spacing isnt actually 1, so you have to set it to that
-  else big numbers push against containers too much. */
-}
-.dashboard-card-title {
-  font-size: 1.25rem;
 }
 /*----------- X -----------*/

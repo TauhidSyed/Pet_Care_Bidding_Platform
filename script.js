@@ -1,6 +1,6 @@
 // NOTE we have decided to heavily comment the first form validation. and then everything that is unique
 // will be handled in its own seperate comment. AKA. once it is covered, then most likely it wont be touched upon again
-/*-- Registration page: ---*/
+//*-- Registration page: ---*/
 const registerForm = document.querySelector("#register-form");
 const usernameInput = document.querySelector("#username");
 const emailInput = document.querySelector("#email");
@@ -8,16 +8,51 @@ const passwordInput = document.querySelector("#password");
 const confirmPasswordInput = document.querySelector("#confirm-password");
 const registerMessage = document.querySelector("#register-message");
 
+//T: for the collapsabe register form
+const providerFields = document.querySelector("#provider-fields");
+const providerServiceInput = document.querySelector("#provider-service");
+
+function updateProviderFields() {
+  const selectedRole = document.querySelector('input[name="userType"]:checked');
+  const providerSelected = selectedRole && selectedRole.value === "carer";
+
+  providerFields.hidden = !providerSelected;
+  providerServiceInput.required = providerSelected;
+}
+
 if (registerForm) {
+  const requestedRole = new URLSearchParams(window.location.search).get("role");
+
+  if (requestedRole) {
+    const requestedRoleInput = registerForm.querySelector(
+      'input[name="userType"][value="' + requestedRole + '"]',
+    );
+
+    if (requestedRoleInput) {
+      requestedRoleInput.checked = true;
+    }
+  }
+
+  updateProviderFields();
+
+  const userTypeInputs = registerForm.querySelectorAll(
+    'input[name="userType"]',
+  );
+
+  for (let i = 0; i < userTypeInputs.length; i++) {
+    userTypeInputs[i].addEventListener("change", updateProviderFields);
+  }
+
   // T: press submit button and then start checking for errors
+
   registerForm.addEventListener("submit", function (event) {
     // T: https://www.w3schools.com/jsref/event_preventdefault.asp
     event.preventDefault();
-
     // T: The checked property sets or returns the checked state of a radio button.
     const role = document.querySelector('input[name="userType"]:checked');
 
     // T: All trims in future used to remove whitespace. similar to strip() in pythin
+
     const username = usernameInput.value.trim();
     const email = emailInput.value.trim();
     const password = passwordInput.value;
@@ -27,15 +62,20 @@ if (registerForm) {
     const errors = [];
 
     // T: So like if its not checked, then error is to choose one
+
     if (!role) {
       errors.push("Choose Pet Owner or Care Provider.");
+    }
+
+    if (role && role.value === "carer" && providerServiceInput.value === "") {
+      errors.push("Choose the service you provide.");
     }
 
     if (username.length < 3) {
       errors.push("Username must be at least 3 characters.");
     }
-
     // T: validity is built in validation for emails.
+
     if (email === "" || !emailInput.validity.valid) {
       errors.push("Enter a valid email address.");
     }
@@ -352,6 +392,16 @@ if (browseRequestCards.length > 0) {
     budgetFilter.value = "";
 
     filterRequests();
+  });
+}
+/*----------- X -----------*/
+
+/*-- Log out buttons: ---*/
+const logoutButtons = document.querySelectorAll("#logout-btn");
+
+for (let i = 0; i < logoutButtons.length; i++) {
+  logoutButtons[i].addEventListener("click", function () {
+    window.location.href = "logged-out.html";
   });
 }
 /*----------- X -----------*/
