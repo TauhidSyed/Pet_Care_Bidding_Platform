@@ -1,16 +1,110 @@
-<!DOCTYPE html>
-<html> <!-- Request Details Page for Care Providers (CARE PROVIDERS; AUTH) -->
-    <head>
-        <title>Details</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
-        <link rel="stylesheet" href="styles.css" />
-    </head>
-    <body>
-        <!-- 
-            Give all the details for that specific request.
-        -->
-        <button class="" id="">Log Out</button>
-        <script></script>
-    </body>
+<!doctype html>
+<html>
+  <!-- J: Landing page (BOTH; NO-AUTH) -->
+  <head>
+    <title>Request Details</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="request-details-page">
+    <main class="container pt-3">
+      <div class="text-center">
+        <div class="brand-pill">PetCare Bidding Platform</div>
+        <h1 class="main-heading">Care Request Details</h1>
+      </div>
+
+      <a href="browse-requests.html" class="btn btn-primary btn-login">
+        Back to Requests
+      </a>
+
+      <div class="row justify-content-center mt-3">
+        <!-- J: Self-explanatory -->
+        <!-- T: Copied landing design for this. the same brand pill -->
+        <div class="col-12 col-lg-7 mb-4">
+          <section id="request-details-card" class="card p-4 h-100">
+            <h2 class="card-title">Request Information</h2>
+
+            <div class="row">
+              <div class="col-12 col-md-6">
+                <p class="mb-1"><strong>Pet:</strong></p>
+                <p id="request-pet"></p>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <p class="mb-1"><strong>Service:</strong></p>
+                <p id="request-service"></p>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <p class="mb-1"><strong>Service starts:</strong></p>
+                <p id="request-start"></p>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <p class="mb-1"><strong>Service ends:</strong></p>
+                <p id="request-end"></p>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <p class="mb-1"><strong>Budget:</strong></p>
+                <p id="request-budget"></p>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <p class="mb-1"><strong>Bidding deadline:</strong></p>
+                <p id="request-deadline"></p>
+              </div>
+
+              <div class="col-12">
+                <p class="mb-1"><strong>Care instructions:</strong></p>
+                <p id="request-instructions"></p>
+              </div>
+            </div>
+          </section>
+
+          <p id="request-load-message" style="color: red"></p>
+        </div>
+
+        <div class="col-12 col-lg-5 mb-4">
+          <form id="bid-form" novalidate>
+            <h2 class="card-title">Submit a Bid</h2>
+
+            <div class="mb-3">
+              <label for="bid-price" class="form-label">
+                Proposed price (AED):
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="bid-price"
+                name="bidPrice"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="bid-description" class="form-label">
+                Service description:
+              </label>
+              <textarea
+                class="form-control"
+                id="bid-description"
+                name="bidDescription"
+                rows="4"
+              ></textarea>
+            </div>
+
+            <p id="bid-message" aria-live="polite"></p>
+
+            <button type="submit" class="btn btn-primary">Submit Bid</button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
 </html>

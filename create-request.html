@@ -10,30 +10,29 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <main class="container">
-    <body class="create-request-page">
-      <h1 class="" id="">Creating a Care Request</h1>
-      <!-- T : dk why to add class for this -->
-      <form id="create-request-form">
+  <body class="create-request-page">
+    <main class="container">
+      <h1 id="request-header-one">Creating a Care Request</h1>
+      <form id="create-request-form" novalidate>
         <div class="row">
-          <!-- T: mobile full width. bigger half width -->
+          <!-- T: Mobile full width. Anything bigger is half-width -->
           <div class="col-12 col-md-6">
-            <!-- T: service, dates budget deadline. adding option for pet choice-->
+            <!-- T: Service, dates, and budget deadline. Added options for pet choice -->
             <label for="pet">Your pet:</label>
             <select id="pet" name="petId" required>
-              <option value=">">Choose a pet</option>
+              <option value="">Choose a pet</option>
               <option value="1">Cloud - Cat</option>
               <option value="2">Rocky - Dog</option>
-              <option value="3">N0tail - Tinker</option>
+              <option value="3">Boush - Tinker</option>
             </select>
           </div>
 
-          <!-- T: mobile full width. bigger half width -->
+          <!-- T: Mobile full width. Anything bigger is half-width -->
           <div class="col-12 col-md-6">
-            <!-- T: service, dates budget deadline. adding option for pet choice-->
+            <!-- T: Service, dates budget deadline. adding option for pet choice-->
             <label for="service">Required Service:</label>
             <select id="service" name="service" required>
-              <option value=">">Choose a pet</option>
+              <option value="">Choose a service</option>
               <option value="walking">Pet walking</option>
               <option value="bathing">Pet bathing</option>
               <option value="grooming">Pet grooming</option>
@@ -71,7 +70,12 @@
 
           <div class="col-12 col-md-6">
             <label for="deadline">Bidding Deadline:</label>
-            <input type="datetime" id="deadline" name="deadLine" required />
+            <input
+              type="datetime-local"
+              id="deadline"
+              name="deadline"
+              required
+            />
           </div>
         </div>
 
@@ -86,7 +90,7 @@
             ></textarea>
           </div>
         </div>
-
+        <p id="request-message" style="color: red"></p>
         <div class="row">
           <div class="col-12">
             <button type="submit" class="btn btn-primary">
@@ -95,8 +99,8 @@
           </div>
         </div>
       </form>
-      <!-- J : The request is then showed in owner-requests.html if its confirmed -->
-      <script></script>
-    </body>
-  </main>
+      <!-- J: The request is then showed in /owner-requests.html if its confirmed -->
+      <script src="script.js"></script>
+    </main>
+  </body>
 </html>

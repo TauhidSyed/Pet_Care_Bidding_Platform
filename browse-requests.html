@@ -11,8 +11,14 @@
             All current available requests, make it like a compact table with a button on the far right for "View request"
             which links to a page /request-details.html with "?id=X" for the query. On that specific query, it will give 
             all the details for that specific request.
+
+            EXTRA 5B:
+            If we wanted to make it so we can view requests without authentication via the link in the main landing page, 
+            we would make this page no-auth, but Im unsure how that would work since we have a log-out button. Perhaps
+            we could use the boolean variable that checks if we are authenticated and make that tied to the log-out button
+            for this page specifically.
         -->
         <button class="" id="">Log Out</button>
-        <script></script>
+        <script src="script.js"></script>
     </body>
 </html>

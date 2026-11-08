@@ -1,113 +1,146 @@
-.create-request-page {
+/*---- Default Format: ----*/
+body {
   background-color: #f7f7f2;
   color: #173810;
 }
-
-.create-request-page main {
-  max-width: 800px;
-  margin: 30px auto;
-}
-
-#create-request-form {
-  background: white;
-  padding: 24px;
-  border: 1px solid #e5d084;
-  border-radius: 10px;
-}
-
-#create-request-form label {
-  margin-bottom: 6px;
-  margin-top: 16px;
-}
-
-#create-request-form input,
-#create-request-form select,
-#create-request-form textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #789071;
-}
-
-#create-request-form .btn-primary {
-  background: #173810;
-  border-color: #173810;
-  margin-top: 20px;
-}
-.login-register-page {
-  background-color: #f7f7f2;
-  color: #173810;
-}
-
-.login-register-page h1 {
+h1 {
   text-align: center;
-  margin: 30px auto;
+  margin: 1.875rem auto;
 }
-
-#login-form {
-  max-width: 480px;
-  margin: 30px auto;
-  background: white;
-  padding: 24px;
-  border: 1px solid #e5d084;
-  border-radius: 10px;
-}
-
-#login-form label {
-  margin-bottom: 6px;
-  margin-top: 16px;
-}
-
-#login-form input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #789071;
-}
-
-#login-form .btn-primary {
+/*---- Default Button: ----*/
+.btn-primary {
   background: #173810;
   border-color: #173810;
-  margin-top: 20px;
-}
-
-#register-form {
-  max-width: 480px;
-  margin: 30px auto;
-  background: white;
-  padding: 24px;
-  border: 1px solid #e5d084;
-  border-radius: 10px;
-}
-
-#register-form label {
-  margin-bottom: 6px;
-  margin-top: 16px;
-}
-
-#register-form input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #789071;
-}
-
-#register-form .register-radio-options input {
-  width: auto;
-  padding: 0px;
-  margin-right: 5px;
-}
-
-#register-form .register-radio-options label {
-  margin-right: 15px;
-}
-
-#register-form .btn-primary {
-  background: #173810;
-  border-color: #173810;
-  margin-top: 20px;
+  color: white;
   transition: 0.3s;
+  margin-top: 1.25rem;
 }
-
-#register-form .btn-primary:hover,
-#login-form .btn-primary:hover {
-  background-color: #e80000;
+.btn-primary:hover {
+  background-color: #378926;
   color: white;
 }
+/*----- Default Form: -----*/
+form {
+  background: white;
+  border: 0.0625rem solid #e5d084;
+  border-radius: 0.625rem;
+  padding: 1.5rem;
+  max-width: 30rem;
+  margin: 1.875rem auto;
+}
+form label {
+  margin-bottom: 0.375rem;
+  margin-top: 1rem;
+}
+form input,
+select,
+textarea {
+  border: 0.0625rem solid #789071;
+  width: 100%;
+  padding: 0.5rem;
+}
+/*-- Main-Landing Page: ---*/
+.brand-pill {
+  background-color: #e5d9a8;
+  padding: 0.375rem 1rem;
+  border-radius: 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  display: inline-block;
+  /* J: Since its on a div, without this it would be as wide as the whole
+  screen so display: inline-block makes it only as wide as the text. */
+}
+.main-heading {
+  margin: 0.5rem auto;
+  font-weight: 800;
+  /* J: Needed this instead of fw-bold since I wanted it to be more 
+  bold + apparently my text-style doesnt support fw-bolder */
+  font-size: 3rem;
+}
+.sub-heading {
+  font-size: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+.card {
+  background-color: white;
+  border: 0.0625rem solid #e5d084;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.02);
+  /* J: Very slight shadow under box so those that like to put their 
+  phones right next to their face might see it XD */
+  transition: 0.2s ease-in-out;
+  /* J: ease-in-out just makes it accelerate-deccelerate instead of
+  going up and down at the same speed. */
+}
+.card:hover {
+  transform: translateY(-0.3rem);
+  /* J: Moves the card up by 0.3rem (5~ px). */
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+.card-title {
+  color: #173810;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+.features {
+  list-style: none;
+  padding: 0;
+}
+.features li {
+  padding: 0.75rem 0;
+  border-bottom: 0.0625rem solid #e5d084;
+  color: #173810;
+  font-size: 1rem;
+}
+.features li:last-child {
+  border-bottom: none;
+}
+.btn-login {
+  background-color: transparent;
+  color: #173810;
+  margin-top: 0;
+  padding: 0.5rem;
+}
+/*- Create Request Page: --*/
+.create-request-page main {
+  max-width: 50rem;
+  margin: 1.875rem auto;
+}
+.create-request-page h1 {
+  text-align: left;
+}
+#create-request-form {
+  max-width: 50rem;
+}
+#request-message {
+  white-space: pre-line;
+}
+/*-- Registration page: ---*/
+#register-form .register-radio-options input {
+  width: auto;
+  padding: 0;
+  margin-right: 0.3125rem;
+}
+#register-form .register-radio-options label {
+  margin-right: 1rem;
+}
+/*T: Had to add this to bug-fix the register-error msg not showing on different lines*/
+#register-message {
+  white-space: pre-line;
+}
+/*----------- X -----------*/
+
+/*-- Login page: ---*/
+/*T: Had to add this to bug-fix the register-error msg not showing on different lines*/
+#login-message {
+  white-space: pre-line;
+}
+/*----------- X -----------*/
+
+/*-- Pets (pets.html) page: ---*/
+/*T: Had to add this to bug-fix the register-error msg not showing on different lines*/
+#pet-message {
+  white-space: pre-line;
+}
+/*----------- X -----------*/

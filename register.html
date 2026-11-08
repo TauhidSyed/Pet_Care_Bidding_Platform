@@ -2,7 +2,7 @@
 <html>
   <!-- Registration page (BOTH; NO-AUTH) -->
   <head>
-    <title>Register</title>
+    <title>Registration</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
       rel="stylesheet"
@@ -10,7 +10,7 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="login-register-page">
+  <body class="register-page">
     <h1 id="register-header-one">Registration</h1>
     <!-- EXTRA 1B: 
             We could add a radio button toggle for owner vs provider which toggles everything after the password entry,
@@ -33,7 +33,7 @@
         <label>Which one are you?</label>
         <div class="register-radio-options">
           <label>
-            <input type="radio" name="userType" value="owner" />
+            <input type="radio" value="owner" name="userType" />
             Pet Owner
           </label>
           <label>
@@ -49,6 +49,7 @@
           class="username"
           id="username"
           placeholder="Please enter your username"
+          name="username"
         />
       </div>
       <div>
@@ -58,6 +59,7 @@
           class="email"
           id="email"
           placeholder="Please enter your email"
+          name="email"
         />
       </div>
       <div>
@@ -67,17 +69,32 @@
           class=""
           id="password"
           placeholder="Please enter your password"
+          name="password"
         />
       </div>
+
+      <div>
+        <label for="confirm-password" class="">Confirm Password:</label>
+        <input
+          type="password"
+          class=""
+          id="confirm-password"
+          placeholder="Please re-enter your password"
+          name="confirmPassword"
+        />
+      </div>
+
+      <p id="register-message" style="color: red"></p>
+      <button type="submit" class="btn btn-primary">Register</button>
       <!-- EXAMPLE of thing you hide if you pick "Im a Pet Owner" and shown if you pick "Im a Care Provider"
             <div class="" id="">
                 <label for="service" class="">Service:</label>
                 <input type="text" class="" id="service" placeholder="Please describe your service">         
             </div>
             -->
-      <button type="submit" class="btn btn-primary" id="">Register</button>
+
       <!-- If successful, the register button puts their data into the database, then links them to /login.html -->
     </form>
-    <script></script>
+    <script src="script.js"></script>
   </body>
 </html>
