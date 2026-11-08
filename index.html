@@ -41,7 +41,8 @@
             </ul>
             <a href="/register.html" class="btn btn-primary mt-auto align-self-start" id="">Register as an Owner</a>
             <!-- J: Since its parent (the div) is a flex-box, the button would stretch to fill the width of the card 
-            by default, but with align-self-start, it makes it only be as wide as its text. -->
+            by default, but with align-self-start, it makes it only be as wide as its text. The "auto" in mt-auto tells 
+            the flexbox that if theres any available space left, put it there (mt in this case, so as a top margin). -->
           </div>
         </div>
         <!-- Provider card: -->
@@ -60,7 +61,7 @@
       </div>
       <div>
         <p class="text-muted mb-2">Already registered?</p>
-        <a href="/login.html" class="btn btn-primary btn-login px-3" id="">Log In</a>
+        <a href="/login.html" class="btn btn-primary btn-clear px-3" id="">Log In</a>
       </div>
     </main>
     <script src="script.js"></script>
