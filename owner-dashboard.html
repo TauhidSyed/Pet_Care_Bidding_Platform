@@ -11,13 +11,81 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <!-- Quick stats on active requests, completed requests, and pet count -->
-    <h1 class="" id="">Welcome back!</h1>
-    <a class="" href="/pets.html">Pets</a>
-    <a class="" href="/create-request.html">Create Request</a>
-    <a class="" href="/owner-requests.html">My Requests</a>
-    <a class="" href="reviews.html">Past Reviews</a>
-    <button class="" id="">Log Out</button>
+    <div class="container mt-3">
+      <nav class="d-flex justify-content-between align-items-center mb-4">
+        <!-- J: justify content-between explanation on /prodiver-dashboard.html -->
+        <div class="brand-pill">PetCare Bidding Platform</div>
+        <button class="btn btn-primary btn-clear" id="logout-btn">Log Out</button>
+      </nav>
+      <main>
+        <div class="text-center mb-3">
+          <h1 class="main-heading" id="">Welcome back!</h1>
+          <p class="sub-heading text-muted  ">Manage your pets and care requests from here.</p>
+        </div>
+        <div class="row mb-3 text-center">
+          <div class="col-md-4 mb-3">
+            <div class="card p-4">
+              <h2 class="card-title mb-2">Your Pets</h2>
+              <div class="stat-number">1</div> <!-- J: Dummy values -->
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card p-4">
+              <h2 class="card-title mb-2">Open Requests</h2>
+              <div class="stat-number">0</div> <!-- J: Dummy values -->
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card p-4">
+              <h2 class="card-title mb-2">Completed Requests</h2>
+              <div class="stat-number">0</div> <!-- J: Dummy values -->
+            </div>
+          </div>
+        </div>
+        <!-- Cards: -->
+        <h2 class="text-center mb-4">What would you like to do?</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card p-4 h-100 d-flex flex-column">
+              <!-- J: d-flex and flex-column explanation on /index.html -->
+              <h3 class="card-title dashboard-card-title">Manage Your Pets</h3>
+              <p class="text-muted mb-4">View and update your pet profiles and care information.</p>
+              <div class="mt-auto">
+                <!-- J: mt-auto explanation on /index.html -->
+                <a href="/pets.html" class="btn btn-primary mt-0">View Pets</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card p-4 h-100 d-flex flex-column">
+              <h3 class="card-title dashboard-card-title">Create a Care Request</h3>
+              <p class="text-muted mb-4">Tell providers what service your pet needs and when.</p>
+              <div class="mt-auto">
+                <a href="/create-request.html" class="btn btn-primary mt-0">Create Request</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card p-4 h-100 d-flex flex-column">
+              <h3 class="card-title dashboard-card-title">My Requests</h3>
+              <p class="text-muted mb-4">Review your requests and compare provider bids.</p>
+              <div class="mt-auto">
+                <a href="/owner-requests.html" class="btn btn-primary mt-0">View Requests</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card p-4 h-100 d-flex flex-column">
+              <h3 class="card-title dashboard-card-title">Reviews</h3>
+              <p class="text-muted mb-4">Read and leave reviews for completed care services.</p>
+              <div class="mt-auto">
+                <a href="reviews.html" class="btn btn-primary mt-0">View Reviews</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
     <script src="script.js"></script>
   </body>
 </html>
