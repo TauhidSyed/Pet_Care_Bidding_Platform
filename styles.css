@@ -134,7 +134,7 @@ textarea {
 #login-message {
   white-space: pre-line;
 }
-/*--- /Pets.html) page: ---*/
+/*---- Pets.html page: ----*/
 /*T: Had to add this to bug-fix the register-error msg not showing on different lines*/
 #pet-message {
   white-space: pre-line;
