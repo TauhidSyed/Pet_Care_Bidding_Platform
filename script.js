@@ -1,3 +1,5 @@
+// NOTE we have decided to heavily comment the first form validation. and then everything that is unique
+// will be handled in its own seperate comment. AKA. once it is covered, then most likely it wont be touched upon again
 /*-- Registration page: ---*/
 const registerForm = document.querySelector("#register-form");
 const usernameInput = document.querySelector("#username");
@@ -7,23 +9,33 @@ const confirmPasswordInput = document.querySelector("#confirm-password");
 const registerMessage = document.querySelector("#register-message");
 
 if (registerForm) {
+  // T: press submit button and then start checking for errors
   registerForm.addEventListener("submit", function (event) {
+    // T: https://www.w3schools.com/jsref/event_preventdefault.asp
     event.preventDefault();
 
+    // T: The checked property sets or returns the checked state of a radio button.
     const role = document.querySelector('input[name="userType"]:checked');
+
+    // T: All trims in future used to remove whitespace. similar to strip() in pythin
     const username = usernameInput.value.trim();
     const email = emailInput.value.trim();
     const password = passwordInput.value;
     const confirmPassword = confirmPasswordInput.value;
+
+    // T: We are using an errors array implementation. makes it simpler and easily pastable to add JS validation for all forms
     const errors = [];
 
+    // T: So like if its not checked, then error is to choose one
     if (!role) {
       errors.push("Choose Pet Owner or Care Provider.");
     }
+
     if (username.length < 3) {
       errors.push("Username must be at least 3 characters.");
     }
 
+    // T: validity is built in validation for emails.
     if (email === "" || !emailInput.validity.valid) {
       errors.push("Enter a valid email address.");
     }
@@ -35,11 +47,15 @@ if (registerForm) {
     if (password !== confirmPassword) {
       errors.push("Passwords do not match.");
     }
+    // T: we push error strings to errors array. now we make the error message by adding all the errors value.
+    // T: keep them on new line as well.
     if (errors.length > 0) {
       registerMessage.textContent = errors.join("\n");
       return;
     }
 
+    // T: Message here is only for front end part. we will remove it later
+    // T: It is to show that we are validating every field and gives an approval
     registerMessage.textContent = "All fields passed front-end validation.";
   });
 }
@@ -117,10 +133,12 @@ if (requestForm) {
     if (deadlineInput.value === "") {
       errors.push("Choose a bidding deadline.");
     } else {
+      // T: set deadline must always be after the current time
+
       if (deadline <= new Date()) {
         errors.push("The bidding deadline must be in the future.");
       }
-
+      // T: deadline must be before start time.
       if (startTimeInput.value && deadline >= startTime) {
         errors.push("The bidding deadline must be before the service starts.");
       }
@@ -160,7 +178,7 @@ if (petForm) {
     if (petBreedInput.value.trim() === "") {
       errors.push("Enter the pet's breed.");
     }
-
+    // T: existence check, positive and integer check
     if (
       petAgeInput.value === "" ||
       Number(petAgeInput.value) < 0 ||
@@ -182,7 +200,7 @@ if (petForm) {
 }
 /*----------- X -----------*/
 
-/*-- Request details page (bid): ---*/
+/*-- Request details page (Bid form): ---*/
 const bidForm = document.querySelector("#bid-form");
 const bidPriceInput = document.querySelector("#bid-price");
 const bidDescriptionInput = document.querySelector("#bid-description");
@@ -195,7 +213,7 @@ if (bidForm) {
     const bidPrice = Number(bidPriceInput.value);
     const bidDescription = bidDescriptionInput.value.trim();
     const errors = [];
-
+    // T: existence, finite (not NaN or infity) number and positive
     if (
       bidPriceInput.value === "" ||
       !Number.isFinite(bidPrice) ||
@@ -217,7 +235,7 @@ if (bidForm) {
 }
 /*----------- X -----------*/
 
-/*-- Request details page: ---*/
+/*-- Request details page (CARDS sample data) ---*/
 const requestDetailsCard = document.querySelector("#request-details-card");
 const requestLoadMessage = document.querySelector("#request-load-message");
 const requestPetText = document.querySelector("#request-pet");
@@ -228,6 +246,7 @@ const requestBudgetText = document.querySelector("#request-budget");
 const requestDeadlineText = document.querySelector("#request-deadline");
 const requestInstructionsText = document.querySelector("#request-instructions");
 
+// T : hard coded sample request so we can see how req details looks liek
 const sampleRequest = {
   pet: "Cloud - Cat",
   service: "Pe walking",
@@ -239,9 +258,12 @@ const sampleRequest = {
     "Cloud is very allergic to earth fire water and air. Please utmost care or we will take legal action!!",
 };
 
+// T : change the text content of the p for each of them
 if (requestDetailsCard) {
   requestPetText.textContent = sampleRequest.pet;
   requestServiceText.textContent = sampleRequest.service;
+  // T : turns date text thing into an object that JS can work with
+  // T: toLocaleString() method returns a Date object as a string, using locale settings.
   requestStartText.textContent = new Date(sampleRequest.start).toLocaleString();
   requestEndText.textContent = new Date(sampleRequest.end).toLocaleString();
   requestBudgetText.textContent = "AED " + sampleRequest.budget;
@@ -249,5 +271,87 @@ if (requestDetailsCard) {
     sampleRequest.deadline,
   ).toLocaleString();
   requestInstructionsText.textContent = sampleRequest.instructions;
+}
+/*----------- X -----------*/
+
+/*-- broswer req page ---*/
+const browseRequestCards = document.querySelectorAll(".browse-request-card");
+const requestSearchInput = document.querySelector("#request-search");
+const petTypeFilter = document.querySelector("#pet-type-filter");
+const serviceFilter = document.querySelector("#service-filter");
+const budgetFilter = document.querySelector("#budget-filter");
+const clearFiltersButton = document.querySelector("#clear-filters");
+const requestCountMessage = document.querySelector("#request-count");
+const noRequestsMessage = document.querySelector("#no-requests-message");
+
+function filterRequests() {
+  const searchText = requestSearchInput.value.trim().toLowerCase();
+  const selectedPetType = petTypeFilter.value;
+  const selectedService = serviceFilter.value;
+
+  let maxBudget = Infinity;
+
+  if (budgetFilter.value !== "") {
+    maxBudget = Number(budgetFilter.value);
+  }
+
+  let visibleRequests = 0;
+
+  for (let i = 0; i < browseRequestCards.length; i++) {
+    const card = browseRequestCards[i];
+    const searchableText = (
+      card.textContent +
+      " " +
+      card.dataset.search +
+      " " +
+      card.dataset.instructions
+    ).toLowerCase();
+
+    const matchesSearch = searchableText.includes(searchText);
+    const matchesPetType =
+      selectedPetType === "" || card.dataset.petType === selectedPetType;
+    const matchesService =
+      selectedService === "" || card.dataset.service === selectedService;
+    const matchesBudget = Number(card.dataset.budget) <= maxBudget;
+
+    if (matchesSearch && matchesPetType && matchesService && matchesBudget) {
+      card.hidden = false;
+      visibleRequests++;
+    } else {
+      card.hidden = true;
+    }
+  }
+
+  requestCountMessage.textContent = visibleRequests + " requests found";
+  noRequestsMessage.hidden = visibleRequests > 0;
+}
+
+if (browseRequestCards.length > 0) {
+  filterRequests();
+
+  requestSearchInput.addEventListener("input", function () {
+    filterRequests();
+  });
+
+  petTypeFilter.addEventListener("change", function () {
+    filterRequests();
+  });
+
+  serviceFilter.addEventListener("change", function () {
+    filterRequests();
+  });
+
+  budgetFilter.addEventListener("input", function () {
+    filterRequests();
+  });
+
+  clearFiltersButton.addEventListener("click", function () {
+    requestSearchInput.value = "";
+    petTypeFilter.value = "";
+    serviceFilter.value = "";
+    budgetFilter.value = "";
+
+    filterRequests();
+  });
 }
 /*----------- X -----------*/

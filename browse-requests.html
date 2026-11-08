@@ -1,13 +1,17 @@
-<!DOCTYPE html>
-<html> <!-- Requests Page for Care Providers (CARE PROVIDERS; AUTH) -->
-    <head>
-        <title>Requests</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
-        <link rel="stylesheet" href="styles.css" />
-    </head>
-    <body>
-        <!-- 
+<!doctype html>
+<html>
+  <!-- Requests Page for Care Providers (CARE PROVIDERS; AUTH) -->
+  <head>
+    <title>Requests</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <!-- 
             All current available requests, make it like a compact table with a button on the far right for "View request"
             which links to a page /request-details.html with "?id=X" for the query. On that specific query, it will give 
             all the details for that specific request.
@@ -16,9 +20,273 @@
             If we wanted to make it so we can view requests without authentication via the link in the main landing page, 
             we would make this page no-auth, but Im unsure how that would work since we have a log-out button. Perhaps
             we could use the boolean variable that checks if we are authenticated and make that tied to the log-out button
-            for this page specifically.
-        -->
-        <button class="" id="">Log Out</button>
-        <script src="script.js"></script>
-    </body>
+            for this page specifically.-->
+  <body class="browse-requests-page">
+    <!-- T: since this page utilizes almost every new concept we used throughout the project. I have chose to heavily comment on it-->
+    <main class="container pt-3">
+      <!-- T: padding top of level 3 which is 1 rem basically-->
+      <div class="text-center">
+        <!--T: same brand pill uI from the landing page-->
+        <div class="brand-pill">PetCare Bidding Platform</div>
+        <h1 class="main-heading">Browse Care Requests</h1>
+        <!--T: greyish text.-->
+        <p class="sub-heading text-muted">
+          Find a request that matches the care you provide.
+        </p>
+      </div>
+      <!--T: 4 is like 1.5 rem-->
+      <section class="card p-4 mb-4">
+        <h2 class="card-title">Find Requests</h2>
+
+        <div class="row g-3">
+          <!--T: dynamic sizing for diff viewport sizes-->
+          <div class="col-12 col-md-6 col-lg-4">
+            <!--T: search implemented as input boxes and select boxes-->
+
+            <label for="request-search" class="form-label">Search:</label>
+            <input
+              type="search"
+              class="form-control"
+              id="request-search"
+              placeholder="Search pet or instructions"
+            />
+          </div>
+
+          <div class="col-12 col-md-6 col-lg-3">
+            <label for="pet-type-filter" class="form-label">Pet type:</label>
+            <select class="form-select" id="pet-type-filter">
+              <option value="">All pet types</option>
+              <option value="cat">Cat</option>
+              <option value="dog">Dog</option>
+              <option value="bird">Bird</option>
+              <option value="rabbit">Rabbit</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-6 col-lg-3">
+            <label for="service-filter" class="form-label">Service:</label>
+            <select class="form-select" id="service-filter">
+              <option value="">All services</option>
+              <option value="walking">Pet walking</option>
+              <option value="grooming">Pet grooming</option>
+              <option value="bathing">Pet bathing</option>
+              <option value="feeding">Pet feeding</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-6 col-lg-2">
+            <label for="budget-filter" class="form-label">
+              Max budget (AED):
+            </label>
+            <input
+              type="number"
+              class="form-control"
+              id="budget-filter"
+              placeholder="Any"
+            />
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <button type="button" id="clear-filters" class="btn btn-primary">
+            Clear Filters
+          </button>
+        </div>
+      </section>
+      <!--T: dflex is display flex. -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="card-title mb-0">Available Requests</h2>
+        <p id="request-count" class="text-muted mb-0"></p>
+      </div>
+      <!-- error msg if theres nothing-->
+      <p id="no-requests-message" class="text-muted" hidden>
+        No requests match those filters.
+      </p>
+
+      <!--T: temp values until we get a backend to show functionality-->
+      <!--T: LOOK at data-search entry -->
+      <!--T: We added this so we can show that the search function works and it is able to look at these meta data tags to search as well.-->
+      <!--T: This would help better match requests for the care providers improving UX-->
+      <!--T: For example, for the card with test = month. if you write anything related, it will show those only-->
+      <div class="row g-4" id="request-list">
+        <div
+          class="col-12 col-md-6 col-lg-4 browse-request-card"
+          data-pet="Cloud"
+          data-pet-type="cat"
+          data-service="walking"
+          data-service-name="Pet walking"
+          data-budget="120"
+          data-start="2026-11-12T09:00:00"
+          data-end="2026-11-12T10:00:00"
+          data-deadline="2026-11-10T18:00:00"
+          data-instructions="Cloud is not happy cat walker. and is not a dog"
+          data-search="1 2 3 4 5 6 7 8 9 0 one two three four five six seven eight nine ten zero"
+        >
+          <div class="card p-4 h-100">
+            <h3 class="card-title">Pet walking for Cloud</h3>
+            <p><strong>Pet:</strong> Cloud - Cat</p>
+            <p><strong>Service:</strong> Pet walking</p>
+            <p><strong>Service date:</strong> November 12, 2026</p>
+            <p><strong>Budget:</strong> AED 120</p>
+            <p class="text-muted">
+              Cloud is not happy cat walker. and is not a dog (test:numbers).
+            </p>
+            <button type="button" class="btn btn-primary view-request mt-auto">
+              View Request
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="col-12 col-md-6 col-lg-4 browse-request-card"
+          data-pet="Cloud"
+          data-pet-type="cat"
+          data-service="walking"
+          data-service-name="Pet walking"
+          data-budget="120"
+          data-start="2026-11-12T09:00:00"
+          data-end="2026-11-12T10:00:00"
+          data-deadline="2026-11-10T18:00:00"
+          data-instructions="Cloud is not happy cat walker. and is not a dog"
+          data-search="shape shapes circle semicircle triangle square pentagon hexagon septagon octagon nonagon"
+        >
+          <div class="card p-4 h-100">
+            <h3 class="card-title">Pet walking for Cloud</h3>
+            <p><strong>Pet:</strong> Cloud - Cat</p>
+            <p><strong>Service:</strong> Pet walking</p>
+            <p><strong>Service date:</strong> November 12, 2026</p>
+            <p><strong>Budget:</strong> AED 120</p>
+            <p class="text-muted">
+              Cloud is not happy cat walker. and is not a dog (test:shapes).
+            </p>
+            <button type="button" class="btn btn-primary view-request mt-auto">
+              View Request
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="col-12 col-md-6 col-lg-4 browse-request-card"
+          data-pet="Cloud"
+          data-pet-type="cat"
+          data-service="walking"
+          data-service-name="Pet walking"
+          data-budget="120"
+          data-start="2026-11-12T09:00:00"
+          data-end="2026-11-12T10:00:00"
+          data-deadline="2026-11-10T18:00:00"
+          data-instructions="Cloud is not happy cat walker. and is not a dog"
+          data-search="day days sun mon tues wed thurs fri sat"
+        >
+          <div class="card p-4 h-100">
+            <h3 class="card-title">Pet walking for Cloud</h3>
+            <p><strong>Pet:</strong> Cloud - Cat</p>
+            <p><strong>Service:</strong> Pet walking</p>
+            <p><strong>Service date:</strong> November 12, 2026</p>
+            <p><strong>Budget:</strong> AED 120</p>
+            <p class="text-muted">
+              Cloud is not happy cat walker. and is not a dog (test : days).
+            </p>
+            <button type="button" class="btn btn-primary view-request mt-auto">
+              View Request
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="col-12 col-md-6 col-lg-4 browse-request-card"
+          data-pet="Cloud"
+          data-pet-type="cat"
+          data-service="walking"
+          data-service-name="Pet walking"
+          data-budget="120"
+          data-start="2026-11-12T09:00:00"
+          data-end="2026-11-12T10:00:00"
+          data-deadline="2026-11-10T18:00:00"
+          data-instructions="Cloud is not happy cat walker. and is not a dog"
+          data-search="month months jan feb mar april may june july aug sep oct nov dec"
+        >
+          <div class="card p-4 h-100">
+            <h3 class="card-title">Pet walking for Cloud</h3>
+            <p><strong>Pet:</strong> Cloud - Cat</p>
+            <p><strong>Service:</strong> Pet walking</p>
+            <p><strong>Service date:</strong> November 12, 2026</p>
+            <p><strong>Budget:</strong> AED 120</p>
+            <p class="text-muted">
+              Cloud is not happy cat walker. and is not a dog (test : months) .
+            </p>
+            <button type="button" class="btn btn-primary view-request mt-auto">
+              View Request
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="col-12 col-md-6 col-lg-4 browse-request-card"
+          data-pet="Cloud"
+          data-pet-type="cat"
+          data-service="walking"
+          data-service-name="Pet walking"
+          data-budget="120"
+          data-start="2026-11-12T09:00:00"
+          data-end="2026-11-12T10:00:00"
+          data-deadline="2026-11-10T18:00:00"
+          data-instructions="Cloud is not happy cat walker. and is not a dog"
+          data-search="chocolate galaxy mars bounty twix snickers"
+        >
+          <div class="card p-4 h-100">
+            <h3 class="card-title">Pet walking for Cloud</h3>
+            <p><strong>Pet:</strong> Cloud - Cat</p>
+            <p><strong>Service:</strong> Pet walking</p>
+            <p><strong>Service date:</strong> November 12, 2026</p>
+            <p><strong>Budget:</strong> AED 120</p>
+            <p class="text-muted">
+              Cloud is not happy cat walker. and is not a dog (test = chocolate)
+              ..
+            </p>
+            <button type="button" class="btn btn-primary view-request mt-auto">
+              View Request
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="col-12 col-md-6 col-lg-4 browse-request-card"
+          data-pet="Cloud"
+          data-pet-type="cat"
+          data-service="walking"
+          data-service-name="Pet walking"
+          data-budget="120"
+          data-start="2026-11-12T09:00:00"
+          data-end="2026-11-12T10:00:00"
+          data-deadline="2026-11-10T18:00:00"
+          data-instructions="Cloud is not happy cat walker. and is not a dog "
+          data-search="fruit veg apple banana carrot broccoli"
+        >
+          <div class="card p-4 h-100">
+            <h3 class="card-title">Pet walking for Cloud</h3>
+            <p><strong>Pet:</strong> Cloud - Cat</p>
+            <p><strong>Service:</strong> Pet walking</p>
+            <p><strong>Service date:</strong> November 12, 2026</p>
+            <p><strong>Budget:</strong> AED 120</p>
+            <p class="text-muted">
+              Cloud is not happy cat walker. and is not a dog (test :
+              fruit/veg).
+            </p>
+            <button type="button" class="btn btn-primary view-request mt-auto">
+              View Request
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-3">
+        <a href="provider-dashboard.html" class="btn btn-primary btn-login">
+          Back to Dashboard
+        </a>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
 </html>
