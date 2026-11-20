@@ -4,7 +4,7 @@ WebDev Project.
 
 Current branches:
 
-J (HTML-focused)
+J (Was supposed to be HTML-focused, ended up having to do more than that, unfortunately)
 
 Tauhid
 

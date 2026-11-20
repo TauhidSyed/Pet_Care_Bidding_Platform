@@ -96,7 +96,7 @@ textarea {
 .features li:last-child {
   border-bottom: none;
 }
-.btn-login {
+.btn-clear { /* J: The clear background button for login/logout/etc. */
   background-color: transparent;
   color: #173810;
   margin-top: 0;
@@ -113,7 +113,7 @@ textarea {
 #create-request-form {
   max-width: 50rem;
 }
-/*-- Registration page: ---*/
+/*-- Registration Page: ---*/
 #register-form .register-radio-options input {
   width: auto;
   padding: 0;
