@@ -48,7 +48,7 @@ app.use(express.static(path.join(__dirname, 'public')));
     app.use we learnt in class.
 */ 
 
-app.use(authentication, express.static(path.join(__dirname, 'private')));
+//app.use(authentication, express.static(path.join(__dirname, 'private')));
 // J: Authentications here for the rest of the files. Need to define a function called "authentication" for this to work. 
 
 /*------- Error 404 -------*/
