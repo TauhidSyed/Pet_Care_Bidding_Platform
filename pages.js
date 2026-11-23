@@ -11,6 +11,11 @@
     teammates' pages, so it looks the same and script.js validation still works.
   - Links to CSS/JS start with "/" (e.g. "/styles.css"): on a page like /requests/3
     a relative "styles.css" would wrongly look for /requests/styles.css.
+  - The data comes from the database through logic.js, so field names are the database
+    column names: pet.name, pet.pet_type, request.service_start, bid.proposed_price, user.role ...
+    Dates arrive as JavaScript Date objects and prices as DECIMAL values (shown with String()).
+  - The form input names (petName, bidPrice, ...) did NOT change: they match the teammates'
+    HTML and script.js. logic.js copies them into the right database columns.
 */
 
 /* =====================================================================
@@ -26,6 +31,11 @@
   as text instead of running them. Use it on EVERYTHING a user typed.
 */
 function escapeHtml(text) {
+  // Empty database columns come back as null: show nothing instead of the word "null".
+  if (text === null || text === undefined) {
+    return '';
+  }
+  // String() also turns DECIMAL prices from the database (e.g. budget 120.00) into normal text: "120".
   const value = String(text);
   let safe = '';
   for (let i = 0; i < value.length; i++) {
@@ -57,17 +67,18 @@ function serviceLabel(service) {
   return escapeHtml(service);
 }
 
-// "2026-12-05T09:00" -> "12/5/2026, 9:00:00 AM" (same toLocaleString() script.js uses)
-function formatDate(text) {
-  return new Date(text).toLocaleString();
+// A DATETIME from the database (a JavaScript Date) -> "12/5/2026, 9:00:00 AM"
+// (same toLocaleString() script.js uses)
+function formatDate(date) {
+  return new Date(date).toLocaleString();
 }
 
-// Status words for people: "open" -> "Open - accepting bids", "pending" -> "Pending", etc.
+// Status words for people: "open" -> "Open - accepting bids", "active" -> "Active", etc.
 function statusLabel(status) {
   if (status === 'open') { return 'Open - accepting bids'; }
   if (status === 'closed') { return 'Closed'; }
   if (status === 'completed') { return 'Completed'; }
-  if (status === 'pending') { return 'Pending'; }
+  if (status === 'active') { return 'Active'; }
   if (status === 'accepted') { return 'Accepted'; }
   if (status === 'rejected') { return 'Rejected'; }
   if (status === 'withdrawn') { return 'Withdrawn'; }
@@ -112,7 +123,7 @@ function pageStart(title, heading, subheading, user) {
   html += '<div class="brand-pill">PetCare Bidding Platform</div>';
   if (user) {
     let dashboardUrl = '/owner-dashboard';
-    if (user.userType === 'carer') {
+    if (user.role === 'carer') {
       dashboardUrl = '/provider-dashboard';
     }
     html += '<div class="d-flex gap-2">';
@@ -179,11 +190,11 @@ function petsPage(user, pets) {
   for (let i = 0; i < pets.length; i++) {
     const pet = pets[i];
     html += '<div class="col-12 col-md-6 col-lg-4"><section class="card p-4 h-100">';
-    html += '<img src="' + escapeHtml(pet.petPhoto) + '" alt="Photo of ' + escapeHtml(pet.petName) + '" class="img-fluid mb-3" />';
-    html += '<h2 class="card-title">' + escapeHtml(pet.petName) + '</h2>';
-    html += '<p class="mb-1"><strong>Type:</strong> ' + escapeHtml(pet.petType) + '</p>';
-    html += '<p class="mb-1"><strong>Breed:</strong> ' + escapeHtml(pet.petBreed) + '</p>';
-    html += '<p class="mb-0"><strong>Age:</strong> ' + escapeHtml(pet.petAge) + '</p>';
+    html += '<img src="' + escapeHtml(pet.photo_url) + '" alt="Photo of ' + escapeHtml(pet.name) + '" class="img-fluid mb-3" />';
+    html += '<h2 class="card-title">' + escapeHtml(pet.name) + '</h2>';
+    html += '<p class="mb-1"><strong>Type:</strong> ' + escapeHtml(pet.pet_type) + '</p>';
+    html += '<p class="mb-1"><strong>Breed:</strong> ' + escapeHtml(pet.breed) + '</p>';
+    html += '<p class="mb-0"><strong>Age:</strong> ' + escapeHtml(pet.age_years) + '</p>';
     html += '</section></div>';
   }
   html += '</div>';
@@ -228,7 +239,7 @@ function createRequestPage(user, pets, services) {
   const petLabels = [];
   for (let i = 0; i < pets.length; i++) {
     petIds.push(String(pets[i].id));
-    petLabels.push(pets[i].petName + ' - ' + pets[i].petType);
+    petLabels.push(pets[i].name + ' - ' + pets[i].pet_type);
   }
   const serviceLabels = [];
   for (let i = 0; i < services.length; i++) {
@@ -282,16 +293,16 @@ function createRequestPage(user, pets, services) {
 function ownerRequestCard(item) {
   const request = item.request;
   let html = '<section class="card p-4 mb-4">';
-  html += '<h3 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(item.pet.petName) + '</h3>';
+  html += '<h3 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(item.pet.name) + '</h3>';
   html += '<p><strong>Status:</strong> ' + statusLabel(request.status) + '</p>';
-  html += '<p><strong>Service:</strong> ' + formatDate(request.startTime) + ' to ' + formatDate(request.endTime) + '</p>';
+  html += '<p><strong>Service:</strong> ' + formatDate(request.service_start) + ' to ' + formatDate(request.service_end) + '</p>';
   html += '<p><strong>Budget:</strong> AED ' + escapeHtml(request.budget) + '</p>';
-  html += '<p><strong>Bidding deadline:</strong> ' + formatDate(request.deadline) + '</p>';
+  html += '<p><strong>Bidding deadline:</strong> ' + formatDate(request.bidding_deadline) + '</p>';
 
-  // List the bids, and remember the pending ones for the dropdown.
+  // List the bids, and remember the active ones for the dropdown.
   html += '<h4 class="h5 mt-3">Submitted Bids</h4>';
-  const pendingIds = [];
-  const pendingLabels = [];
+  const activeIds = [];
+  const activeLabels = [];
   let winnerName = '';
   if (item.bids.length === 0) {
     html += '<p class="text-muted">No bids yet.</p>';
@@ -301,14 +312,15 @@ function ownerRequestCard(item) {
     const carer = item.bids[i].carer;
     html += '<div class="card p-3 mb-3">';
     html += '<p class="mb-1"><strong>' + escapeHtml(carer.username) + '</strong> (' + statusLabel(bid.status) + ')</p>';
-    html += '<p class="mb-1">AED ' + escapeHtml(bid.bidPrice) + '</p>';
-    html += '<p class="text-muted mb-0">' + escapeHtml(bid.bidDescription) + '</p>';
+    html += '<p class="mb-1">AED ' + escapeHtml(bid.proposed_price) + '</p>';
+    html += '<p class="text-muted mb-0">' + escapeHtml(bid.description) + '</p>';
     html += '</div>';
-    if (bid.status === 'pending') {
-      pendingIds.push(String(bid.id));
-      pendingLabels.push(carer.username + ' - AED ' + bid.bidPrice);
+    if (bid.status === 'active') {
+      activeIds.push(String(bid.id));
+      activeLabels.push(carer.username + ' - AED ' + bid.proposed_price);
     }
-    if (bid.id === request.winningBidId) {
+    // The accepted bid is the winner (the database has no separate "winner" column).
+    if (bid.status === 'accepted') {
       winnerName = carer.username;
     }
   }
@@ -318,7 +330,7 @@ function ownerRequestCard(item) {
     html += '<form action="/requests/' + request.id + '/select-bid" method="POST">';
     html += '<label class="form-label" for="winning-bid-' + request.id + '">Choose a provider:</label>';
     html += '<select class="form-select" id="winning-bid-' + request.id + '" name="winningBidId" required>';
-    html += '<option value="">Choose a bid</option>' + optionsHtml(pendingIds, pendingLabels, '') + '</select>';
+    html += '<option value="">Choose a bid</option>' + optionsHtml(activeIds, activeLabels, '') + '</select>';
     html += '<button type="submit" class="btn btn-primary mt-2">Select Provider</button>';
     html += '</form>';
     // Closing is a separate form, so it doesn't need a bid to be chosen.
@@ -386,7 +398,7 @@ function ownerRequestsPage(user, items) {
        same ids (#request-search, #pet-type-filter, ...) and the data-* attributes on each card.
   EXTRA FEATURE (tag search): each card's data-search holds the request's tags, which
   script.js searches; the server search checks the tags too.
-  items = [{ request, pet }] from logic.browseRequests, query = req.query (to keep the typed values).
+  items = [{ request, pet, tags }] from logic.browseRequests, query = req.query (to keep the typed values).
 */
 function browsePage(user, items, query, services, petTypes) {
   let html = pageStart('Requests', 'Browse Care Requests', 'Find a request that matches the care you provide.', user);
@@ -397,7 +409,7 @@ function browsePage(user, items, query, services, petTypes) {
   let service = '';
   let maxBudget = '';
   if (query.search) { search = String(query.search); }
-  if (query.petType) { petType = String(query.petType); }
+  if (query.pet_type) { petType = String(query.pet_type); }
   if (query.service) { service = String(query.service); }
   if (query.maxBudget) { maxBudget = String(query.maxBudget); }
 
@@ -439,28 +451,26 @@ function browsePage(user, items, query, services, petTypes) {
     const pet = items[i].pet;
     // data-* attributes: script.js reads these to filter without reloading.
     html += '<div class="col-12 col-md-6 col-lg-4 browse-request-card"';
-    html += ' data-pet="' + escapeHtml(pet.petName) + '"';
-    html += ' data-pet-type="' + escapeHtml(pet.petType) + '"';
+    html += ' data-pet="' + escapeHtml(pet.name) + '"';
+    html += ' data-pet-type="' + escapeHtml(pet.pet_type) + '"';
     html += ' data-service="' + escapeHtml(request.service) + '"';
     html += ' data-service-name="' + serviceLabel(request.service) + '"';
     html += ' data-budget="' + escapeHtml(request.budget) + '"';
-    html += ' data-start="' + escapeHtml(request.startTime) + '"';
-    html += ' data-end="' + escapeHtml(request.endTime) + '"';
-    html += ' data-deadline="' + escapeHtml(request.deadline) + '"';
     html += ' data-instructions="' + escapeHtml(request.instructions) + '"';
-    html += ' data-search="' + escapeHtml(request.tags) + '">';
+    html += ' data-search="' + escapeHtml(items[i].tags) + '">';
     html += '<div class="card p-4 h-100">';
-    html += '<h3 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(pet.petName) + '</h3>';
-    html += '<p><strong>Pet:</strong> ' + escapeHtml(pet.petName) + ' - ' + escapeHtml(pet.petType) + '</p>';
+    html += '<h3 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(pet.name) + '</h3>';
+    html += '<p><strong>Pet:</strong> ' + escapeHtml(pet.name) + ' - ' + escapeHtml(pet.pet_type) + '</p>';
     html += '<p><strong>Service:</strong> ' + serviceLabel(request.service) + '</p>';
-    html += '<p><strong>Service date:</strong> ' + formatDate(request.startTime) + '</p>';
+    html += '<p><strong>Service date:</strong> ' + formatDate(request.service_start) + '</p>';
     html += '<p><strong>Budget:</strong> AED ' + escapeHtml(request.budget) + '</p>';
-    html += '<p><strong>Bidding deadline:</strong> ' + formatDate(request.deadline) + '</p>';
-    if (request.instructions !== '') {
+    html += '<p><strong>Bidding deadline:</strong> ' + formatDate(request.bidding_deadline) + '</p>';
+    // Empty instructions can be '' or null (empty column), so we check for "has text".
+    if (request.instructions) {
       html += '<p class="text-muted">' + escapeHtml(request.instructions) + '</p>';
     }
-    if (request.tags !== '') {
-      html += '<p class="text-muted small">Tags: ' + escapeHtml(request.tags) + '</p>';
+    if (items[i].tags !== '') {
+      html += '<p class="text-muted small">Tags: ' + escapeHtml(items[i].tags) + '</p>';
     }
     html += '<a href="/requests/' + request.id + '" class="btn btn-primary view-request mt-auto">View Request</a>';
     html += '</div></div>';
@@ -487,18 +497,18 @@ function requestDetailsPage(user, details) {
   html += '<div class="row justify-content-center mt-3">';
   html += '<div class="col-12 col-lg-7 mb-4"><section id="request-info" class="card p-4 h-100">';
   html += '<h2 class="card-title">Request Information</h2><div class="row">';
-  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Pet:</strong></p><p>' + escapeHtml(pet.petName) + ' - ' + escapeHtml(pet.petType) + ' (' + escapeHtml(pet.petBreed) + ')</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Pet:</strong></p><p>' + escapeHtml(pet.name) + ' - ' + escapeHtml(pet.pet_type) + ' (' + escapeHtml(pet.breed) + ')</p></div>';
   html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Service:</strong></p><p>' + serviceLabel(request.service) + '</p></div>';
-  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Service starts:</strong></p><p>' + formatDate(request.startTime) + '</p></div>';
-  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Service ends:</strong></p><p>' + formatDate(request.endTime) + '</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Service starts:</strong></p><p>' + formatDate(request.service_start) + '</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Service ends:</strong></p><p>' + formatDate(request.service_end) + '</p></div>';
   html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Budget:</strong></p><p>AED ' + escapeHtml(request.budget) + '</p></div>';
-  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Bidding deadline:</strong></p><p>' + formatDate(request.deadline) + '</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Bidding deadline:</strong></p><p>' + formatDate(request.bidding_deadline) + '</p></div>';
   html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Status:</strong></p><p>' + statusLabel(request.status) + '</p></div>';
   html += '<div class="col-12"><p class="mb-1"><strong>Care instructions:</strong></p><p>' + escapeHtml(request.instructions) + '</p></div>';
   html += '</div></section></div>';
 
   html += '<div class="col-12 col-lg-5 mb-4">';
-  if (user.userType === 'carer') {
+  if (user.role === 'carer') {
     if (details.canBid) {
       // Same ids as request-details.html so script.js validates it. Posts to POST /requests/:id/bids.
       html += '<form id="bid-form" action="/requests/' + request.id + '/bids" method="POST" novalidate>';
@@ -512,7 +522,7 @@ function requestDetailsPage(user, details) {
       html += '</form>';
     } else if (details.myBid !== null && details.myBid.status !== 'withdrawn') {
       html += '<section class="card p-4"><h2 class="card-title">Your Bid</h2>';
-      html += '<p><strong>Price:</strong> AED ' + escapeHtml(details.myBid.bidPrice) + '</p>';
+      html += '<p><strong>Price:</strong> AED ' + escapeHtml(details.myBid.proposed_price) + '</p>';
       html += '<p><strong>Status:</strong> ' + statusLabel(details.myBid.status) + '</p>';
       html += '<a href="/bids" class="btn btn-primary">Go to My Bids</a></section>';
     } else {
@@ -527,8 +537,8 @@ function requestDetailsPage(user, details) {
     for (let i = 0; i < details.bids.length; i++) {
       const bid = details.bids[i].bid;
       html += '<div class="card p-3 mb-2">';
-      html += '<p class="mb-1"><strong>' + escapeHtml(details.bids[i].carer.username) + '</strong> - AED ' + escapeHtml(bid.bidPrice) + ' (' + statusLabel(bid.status) + ')</p>';
-      html += '<p class="text-muted mb-0">' + escapeHtml(bid.bidDescription) + '</p></div>';
+      html += '<p class="mb-1"><strong>' + escapeHtml(details.bids[i].carer.username) + '</strong> - AED ' + escapeHtml(bid.proposed_price) + ' (' + statusLabel(bid.status) + ')</p>';
+      html += '<p class="text-muted mb-0">' + escapeHtml(bid.description) + '</p></div>';
     }
     html += '</section>';
     html += '<a href="/owner-requests" class="btn btn-primary btn-clear mt-3">Back to My Requests</a>';
@@ -556,24 +566,24 @@ function bidsPage(user, items) {
     const bid = items[i].bid;
     const request = items[i].request;
     html += '<div class="col-12 col-lg-6 provider-bid-card"><section class="card p-4 h-100">';
-    html += '<h2 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(items[i].pet.petName) + '</h2>';
+    html += '<h2 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(items[i].pet.name) + '</h2>';
     html += '<p><strong>Status:</strong> <span class="bid-status">' + statusLabel(bid.status) + '</span></p>';
-    html += '<p><strong>Deadline:</strong> ' + formatDate(request.deadline) + '</p>';
+    html += '<p><strong>Deadline:</strong> ' + formatDate(request.bidding_deadline) + '</p>';
 
     if (items[i].canChange) {
       html += '<form class="bid-edit-form" action="/bids/' + bid.id + '/edit" method="POST">';
       html += '<div class="mb-3"><label class="form-label">Your price (AED):</label>';
-      html += '<input type="number" class="form-control bid-price" name="bidPrice" min="0.01" step="0.01" required value="' + escapeHtml(bid.bidPrice) + '" /></div>';
+      html += '<input type="number" class="form-control bid-price" name="bidPrice" min="0.01" step="0.01" required value="' + escapeHtml(bid.proposed_price) + '" /></div>';
       html += '<div class="mb-3"><label class="form-label">Service description:</label>';
-      html += '<textarea class="form-control bid-description" name="bidDescription" rows="3" minlength="10" required>' + escapeHtml(bid.bidDescription) + '</textarea></div>';
+      html += '<textarea class="form-control bid-description" name="bidDescription" rows="3" minlength="10" required>' + escapeHtml(bid.description) + '</textarea></div>';
       html += '<button type="submit" class="btn btn-primary mt-0">Save Edit</button>';
       html += '</form>';
       html += '<form action="/bids/' + bid.id + '/withdraw" method="POST">';
       html += '<button type="submit" class="btn btn-outline-danger mt-2 withdraw-bid">Withdraw Bid</button>';
       html += '</form>';
     } else {
-      html += '<p><strong>Your price:</strong> AED ' + escapeHtml(bid.bidPrice) + '</p>';
-      html += '<p class="text-muted">' + escapeHtml(bid.bidDescription) + '</p>';
+      html += '<p><strong>Your price:</strong> AED ' + escapeHtml(bid.proposed_price) + '</p>';
+      html += '<p class="text-muted">' + escapeHtml(bid.description) + '</p>';
     }
     html += '<a href="/requests/' + request.id + '" class="btn btn-primary btn-clear align-self-start mt-2">View Request</a>';
     html += '</section></div>';
@@ -622,7 +632,7 @@ function reviewsPage(user, info) {
     html += '<div class="card p-3 mb-3">';
     html += '<h3 class="h5">' + escapeHtml(item.reviewer.username) + ' <span class="text-warning">' + stars(item.review.rating) + '</span></h3>';
     html += '<p class="mb-1">' + escapeHtml(item.review.comment) + '</p>';
-    html += '<p class="text-muted mb-0">' + serviceLabel(item.request.service) + ' for ' + escapeHtml(item.pet.petName) + '</p>';
+    html += '<p class="text-muted mb-0">' + serviceLabel(item.request.service) + ' for ' + escapeHtml(item.pet.name) + '</p>';
     html += '</div>';
   }
   html += '</section>';
@@ -636,7 +646,7 @@ function reviewsPage(user, info) {
     html += '<div class="card p-3 mb-3">';
     html += '<h3 class="h5">About ' + escapeHtml(item.reviewee.username) + ' <span class="text-warning">' + stars(item.review.rating) + '</span></h3>';
     html += '<p class="mb-1">' + escapeHtml(item.review.comment) + '</p>';
-    html += '<p class="text-muted mb-0">' + serviceLabel(item.request.service) + ' for ' + escapeHtml(item.pet.petName) + '</p>';
+    html += '<p class="text-muted mb-0">' + serviceLabel(item.request.service) + ' for ' + escapeHtml(item.pet.name) + '</p>';
     html += '</div>';
   }
   html += '</section></div>';
@@ -651,7 +661,7 @@ function reviewsPage(user, info) {
     for (let i = 0; i < info.reviewable.length; i++) {
       const item = info.reviewable[i];
       ids.push(String(item.request.id));
-      labels.push(serviceLabel(item.request.service) + ' for ' + item.pet.petName + ' (with ' + item.partner.username + ')');
+      labels.push(serviceLabel(item.request.service) + ' for ' + item.pet.name + ' (with ' + item.partner.username + ')');
     }
     html += '<form id="review-form" action="/reviews" method="POST">';
     html += '<h2 class="card-title">Leave a Review</h2>';
@@ -708,7 +718,7 @@ function requestListCard(title, items, emptyText) {
   for (let i = 0; i < items.length; i++) {
     const request = items[i].request;
     html += '<li class="mb-2"><a href="/requests/' + request.id + '">' + serviceLabel(request.service) + ' for ' +
-      escapeHtml(items[i].pet.petName) + '</a><br /><span class="text-muted small">' + formatDate(request.startTime) + '</span></li>';
+      escapeHtml(items[i].pet.name) + '</a><br /><span class="text-muted small">' + formatDate(request.service_start) + '</span></li>';
   }
   html += '</ul></section></div>';
   return html;

@@ -7,6 +7,9 @@
     2. calls a function from logic.js (where all the rules live),
     3. sends the answer: a redirect or an HTML page (built in pages.js) on success,
        or an error page with the right status code (400 / 401 / 403 / 404).
+  The logic.js functions talk to the MySQL database, so they are `async`. That's why every
+  route is written  async (req, res) => { ... await logic.something(...) ... }:
+  `await` waits for the database's answer before we build the page (see the top of logic.js).
   Start it with:  node server.js   then open http://127.0.0.1:3000/
 */
 
@@ -36,10 +39,10 @@ app.use(express.json());
 // J: Ill probably use this later so Ill just add it now.
 
 /* =====================================================================
-   2. DATA (temporary, in memory)
+   2. DATA (MySQL database through Prisma, see logic.js)
    ===================================================================== */
-// server.js never touches the data arrays directly: it always goes through logic.js
-// (which reads data.js). That way the DB teammate only has to change logic.js.
+// server.js never talks to the database directly: it always goes through logic.js
+// (the only file that uses Prisma). So all database code is in one place.
 const logic = require('./logic');
 const pages = require('./pages');
 
@@ -56,8 +59,8 @@ function sendError(res, result, backUrl, user) {
   toId(text)
   Turns an id from the URL or a form ("3") into a number (3) with parseInt.
   Our ids are numbers, and 3 === "3" is false, so we must convert before comparing.
-  If it isn't a number at all (e.g. /requests/abc), parseInt gives NaN, and no id equals NaN,
-  so the lookup simply finds nothing -> 404.
+  If it isn't a number at all (e.g. /requests/abc), parseInt gives NaN; logic.js checks for
+  that before asking the database, and treats it as "not found" -> 404.
 */
 function toId(text) {
   return parseInt(text);
@@ -88,52 +91,54 @@ app.use(session({
 
 /*
   getCurrentUser(req)
-  The logged-in user object, or null if nobody is logged in.
-  We only keep the id + userType in the session, and look up the rest when needed.
+  The logged-in user (their row from the users table), or null if nobody is logged in.
+  We only keep the id + role in the session, and look up the rest in the database when needed.
+  It's async because the lookup asks the database, so callers write: await getCurrentUser(req)
 */
-function getCurrentUser(req) {
+async function getCurrentUser(req) {
   if (!req.session.userId) {
     return null;
   }
-  return logic.findUserById(req.session.userId);
+  return await logic.findUserById(req.session.userId);
 }
 
 /*
   EXCEPTION (not in the lectures): our own middleware functions
   A middleware is a function (req, res, next) that runs BEFORE the route.
   It either stops the request (redirect / error) or calls next() to continue to the route.
-  We put it in front of a route like:  app.get('/pets', ownerOnly, function (req, res) {...})
+  We put it in front of a route like:  app.get('/pets', ownerOnly, async (req, res) => {...})
   Why: every private page needs the same "are you logged in? right role?" check;
   writing it once avoids forgetting it in one of 20 routes.
+  They're async because finding the logged-in user asks the database.
 */
 
 // authentication: must be logged in (any role). Not logged in -> go to the login page.
-function authentication(req, res, next) {
-  if (getCurrentUser(req) === null) {
+async function authentication(req, res, next) {
+  if (await getCurrentUser(req) === null) {
     return res.redirect('/login.html');
   }
   next();
 }
 
 // ownerOnly: must be logged in AND a pet owner. Logged in as a provider -> 403 Forbidden.
-function ownerOnly(req, res, next) {
-  const user = getCurrentUser(req);
+async function ownerOnly(req, res, next) {
+  const user = await getCurrentUser(req);
   if (user === null) {
     return res.redirect('/login.html');
   }
-  if (user.userType !== 'owner') {
+  if (user.role !== 'owner') {
     return res.status(403).send(pages.errorPage(403, 'Only pet owners can do this.', '/provider-dashboard', user));
   }
   next();
 }
 
 // carerOnly: must be logged in AND a care provider. Logged in as an owner -> 403 Forbidden.
-function carerOnly(req, res, next) {
-  const user = getCurrentUser(req);
+async function carerOnly(req, res, next) {
+  const user = await getCurrentUser(req);
   if (user === null) {
     return res.redirect('/login.html');
   }
-  if (user.userType !== 'carer') {
+  if (user.role !== 'carer') {
     return res.status(403).send(pages.errorPage(403, 'Only care providers can do this.', '/owner-dashboard', user));
   }
   next();
@@ -151,8 +156,8 @@ function carerOnly(req, res, next) {
   OUT:  success -> redirect to the login page.
         problem -> 400 + error page listing what to fix.
 */
-app.post('/register', function (req, res) {
-  const result = logic.registerUser(req.body);
+app.post('/register', async (req, res) => {
+  const result = await logic.registerUser(req.body);
   if (!result.ok) {
     return sendError(res, result, '/register.html', null);
   }
@@ -164,18 +169,18 @@ app.post('/register', function (req, res) {
   POST /login
   IN:   req.body.username, req.body.password
   DOES: logic.loginUser checks the password with bcrypt.
-        On success we save the user's id and userType in the session (= "logged in").
+        On success we save the user's id and role in the session (= "logged in").
   OUT:  owner -> /owner-dashboard, carer -> /provider-dashboard.
         wrong details -> 401 (Unauthorized) + error page.
 */
-app.post('/login', function (req, res) {
-  const result = logic.loginUser(req.body.username, req.body.password);
+app.post('/login', async (req, res) => {
+  const result = await logic.loginUser(req.body.username, req.body.password);
   if (!result.ok) {
     return sendError(res, result, '/login.html', null);
   }
   req.session.userId = result.user.id;
-  req.session.userType = result.user.userType;
-  if (result.user.userType === 'owner') {
+  req.session.role = result.user.role;
+  if (result.user.role === 'owner') {
     res.redirect('/owner-dashboard');
   } else {
     res.redirect('/provider-dashboard');
@@ -229,9 +234,9 @@ app.use(express.static(path.join(__dirname, 'public')));
   GET /owner-dashboard
   OUT: the owner dashboard: counts + lists of my pets, open, active and completed requests.
 */
-app.get('/owner-dashboard', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  res.send(pages.ownerDashboardPage(user, logic.getOwnerDashboard(user.id)));
+app.get('/owner-dashboard', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  res.send(pages.ownerDashboardPage(user, await logic.getOwnerDashboard(user.id)));
 });
 // Every route here has `ownerOnly` in front: not logged in -> login page, provider -> 403.
 // The owner's id always comes from the SESSION, never from the form, so nobody can act as someone else.
@@ -240,9 +245,9 @@ app.get('/owner-dashboard', ownerOnly, function (req, res) {
   GET /pets
   OUT: the "My Pets" page: the logged-in owner's pets + the add-pet form.
 */
-app.get('/pets', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  res.send(pages.petsPage(user, logic.getPetsForOwner(user.id)));
+app.get('/pets', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  res.send(pages.petsPage(user, await logic.getPetsForOwner(user.id)));
 });
 
 /*
@@ -251,9 +256,9 @@ app.get('/pets', ownerOnly, function (req, res) {
   DOES: logic.addPet validates and saves the pet for THIS owner.
   OUT:  success -> back to /pets (the new pet shows up). Problem -> 400 + error page.
 */
-app.post('/pets', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.addPet(user.id, req.body);
+app.post('/pets', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.addPet(user.id, req.body);
   if (!result.ok) {
     return sendError(res, result, '/pets', user);
   }
@@ -264,9 +269,9 @@ app.post('/pets', ownerOnly, function (req, res) {
   GET /create-request
   OUT: the create-request form, with a dropdown of THIS owner's pets.
 */
-app.get('/create-request', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  res.send(pages.createRequestPage(user, logic.getPetsForOwner(user.id), logic.SERVICES));
+app.get('/create-request', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  res.send(pages.createRequestPage(user, await logic.getPetsForOwner(user.id), logic.SERVICES));
 });
 
 /*
@@ -275,9 +280,9 @@ app.get('/create-request', ownerOnly, function (req, res) {
   DOES: logic.createRequest checks the dates/budget/pet and saves it with status "open".
   OUT:  success -> /owner-requests. Problem -> 400 + error page.
 */
-app.post('/requests', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.createRequest(user.id, req.body);
+app.post('/requests', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.createRequest(user.id, req.body);
   if (!result.ok) {
     return sendError(res, result, '/create-request', user);
   }
@@ -288,9 +293,9 @@ app.post('/requests', ownerOnly, function (req, res) {
   GET /owner-requests
   OUT: the owner's requests grouped by status, each with its bids and action buttons.
 */
-app.get('/owner-requests', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.getOwnerRequests(user.id);
+app.get('/owner-requests', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.getOwnerRequests(user.id);
   res.send(pages.ownerRequestsPage(user, result.items));
 });
 
@@ -300,9 +305,9 @@ app.get('/owner-requests', ownerOnly, function (req, res) {
   DOES: logic.selectWinningBid: chosen bid accepted, others rejected, request closed.
   OUT:  success -> /owner-requests. Not found -> 404, not your request -> 403, not allowed now -> 400.
 */
-app.post('/requests/:id/select-bid', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.selectWinningBid(user.id, toId(req.params.id), toId(req.body.winningBidId));
+app.post('/requests/:id/select-bid', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.selectWinningBid(user.id, toId(req.params.id), toId(req.body.winningBidId));
   if (!result.ok) {
     return sendError(res, result, '/owner-requests', user);
   }
@@ -315,9 +320,9 @@ app.post('/requests/:id/select-bid', ownerOnly, function (req, res) {
   DOES: logic.closeRequest: closes an open request without a winner (no more bids).
   OUT:  success -> /owner-requests, otherwise 404 / 403 / 400.
 */
-app.post('/requests/:id/close', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.closeRequest(user.id, toId(req.params.id));
+app.post('/requests/:id/close', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.closeRequest(user.id, toId(req.params.id));
   if (!result.ok) {
     return sendError(res, result, '/owner-requests', user);
   }
@@ -330,9 +335,9 @@ app.post('/requests/:id/close', ownerOnly, function (req, res) {
   DOES: logic.completeRequest: closed request with a winner -> "completed" (reviews unlock).
   OUT:  success -> /owner-requests, otherwise 404 / 403 / 400.
 */
-app.post('/requests/:id/complete', ownerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.completeRequest(user.id, toId(req.params.id));
+app.post('/requests/:id/complete', ownerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.completeRequest(user.id, toId(req.params.id));
   if (!result.ok) {
     return sendError(res, result, '/owner-requests', user);
   }
@@ -346,9 +351,9 @@ app.post('/requests/:id/complete', ownerOnly, function (req, res) {
   GET /provider-dashboard
   OUT: the provider dashboard: counts + lists of current tasks, active bids, completed jobs.
 */
-app.get('/provider-dashboard', carerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  res.send(pages.providerDashboardPage(user, logic.getProviderDashboard(user.id)));
+app.get('/provider-dashboard', carerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  res.send(pages.providerDashboardPage(user, await logic.getProviderDashboard(user.id)));
 });
 // Every route here has `carerOnly` in front: not logged in -> login page, owner -> 403.
 
@@ -359,9 +364,9 @@ app.get('/provider-dashboard', carerOnly, function (req, res) {
   DOES: logic.browseRequests returns the open, not-yet-expired requests that match.
   OUT:  the Browse page with one card per request.
 */
-app.get('/browse-requests', carerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.browseRequests(req.query);
+app.get('/browse-requests', carerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.browseRequests(req.query);
   res.send(pages.browsePage(user, result.items, req.query, logic.SERVICES, logic.PET_TYPES));
 });
 
@@ -372,10 +377,10 @@ app.get('/browse-requests', carerOnly, function (req, res) {
         no second bid from the same provider.
   OUT:  success -> /bids. Missing request -> 404. Closed/late/invalid -> 400.
 */
-app.post('/requests/:id/bids', carerOnly, function (req, res) {
-  const user = getCurrentUser(req);
+app.post('/requests/:id/bids', carerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
   const requestId = toId(req.params.id);
-  const result = logic.placeBid(requestId, user.id, req.body.bidPrice, req.body.bidDescription);
+  const result = await logic.placeBid(requestId, user.id, req.body.bidPrice, req.body.bidDescription);
   if (!result.ok) {
     return sendError(res, result, '/requests/' + req.params.id, user);
   }
@@ -386,9 +391,9 @@ app.post('/requests/:id/bids', carerOnly, function (req, res) {
   GET /bids
   OUT: the "My Bids" page with all of this provider's bids.
 */
-app.get('/bids', carerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.getCarerBids(user.id);
+app.get('/bids', carerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.getCarerBids(user.id);
   res.send(pages.bidsPage(user, result.items));
 });
 
@@ -399,9 +404,9 @@ app.get('/bids', carerOnly, function (req, res) {
   OUT:  success -> /bids. Not found 404, not yours 403, too late / invalid 400.
   (A plain HTML form can only send GET or POST, so we use POST instead of PUT.)
 */
-app.post('/bids/:id/edit', carerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.editBid(user.id, toId(req.params.id), req.body.bidPrice, req.body.bidDescription);
+app.post('/bids/:id/edit', carerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.editBid(user.id, toId(req.params.id), req.body.bidPrice, req.body.bidDescription);
   if (!result.ok) {
     return sendError(res, result, '/bids', user);
   }
@@ -415,9 +420,9 @@ app.post('/bids/:id/edit', carerOnly, function (req, res) {
   OUT:  success -> /bids, otherwise 404 / 403 / 400.
   (POST instead of DELETE for the same reason as above.)
 */
-app.post('/bids/:id/withdraw', carerOnly, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.withdrawBid(user.id, toId(req.params.id));
+app.post('/bids/:id/withdraw', carerOnly, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.withdrawBid(user.id, toId(req.params.id));
   if (!result.ok) {
     return sendError(res, result, '/bids', user);
   }
@@ -436,12 +441,12 @@ app.post('/bids/:id/withdraw', carerOnly, function (req, res) {
   OUT:  the details page. Providers get the bid form (if bidding is still allowed),
         owners get the list of bids.
 */
-app.get('/requests/:id', authentication, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.getRequestDetails(user, toId(req.params.id));
+app.get('/requests/:id', authentication, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.getRequestDetails(user, toId(req.params.id));
   if (!result.ok) {
     let backUrl = '/owner-requests';
-    if (user.userType === 'carer') {
+    if (user.role === 'carer') {
       backUrl = '/browse-requests';
     }
     return sendError(res, result, backUrl, user);
@@ -453,9 +458,9 @@ app.get('/requests/:id', authentication, function (req, res) {
   OUT: the Reviews page: reviews about me, reviews I wrote, and a form listing
        my completed services that I haven't reviewed yet.
 */
-app.get('/reviews', authentication, function (req, res) {
-  const user = getCurrentUser(req);
-  res.send(pages.reviewsPage(user, logic.getReviewsPage(user.id)));
+app.get('/reviews', authentication, async (req, res) => {
+  const user = await getCurrentUser(req);
+  res.send(pages.reviewsPage(user, await logic.getReviewsPage(user.id)));
 });
 
 /*
@@ -465,9 +470,9 @@ app.get('/reviews', authentication, function (req, res) {
         rating 1-5, one review per person per request.
   OUT:  success -> /reviews. Not part of it -> 403. Invalid -> 400.
 */
-app.post('/reviews', authentication, function (req, res) {
-  const user = getCurrentUser(req);
-  const result = logic.addReview(user.id, req.body);
+app.post('/reviews', authentication, async (req, res) => {
+  const user = await getCurrentUser(req);
+  const result = await logic.addReview(user.id, req.body);
   if (!result.ok) {
     return sendError(res, result, '/reviews', user);
   }
@@ -486,10 +491,22 @@ app.post('/reviews', authentication, function (req, res) {
   It must be the LAST app.use, because Express checks routes from top to bottom.
   We show the same error page as everywhere else (with a link home).
 */
-app.use(function (req, res) {
-  res.status(404).send(pages.errorPage(404, 'Page not found.', '/', getCurrentUser(req)));
+app.use(async (req, res) => {
+  res.status(404).send(pages.errorPage(404, 'Page not found.', '/', await getCurrentUser(req)));
 });
 // J: This basically handles anything that gets to this point and
+
+/*
+  500 - DATABASE / SERVER ERRORS
+  If something crashes inside an async route (e.g. MySQL is not running), Express 5 catches it
+  and passes it here. A middleware with FOUR parameters (err, req, res, next) is Express's way of
+  saying "this one handles errors". We log the real error for us in the terminal, and show the user
+  a simple page instead of a stack trace (which could leak details about our code or database).
+*/
+app.use(function (err, req, res, next) {
+  console.log(err);
+  res.status(500).send(pages.errorPage(500, 'Something went wrong on our side. Please try again later.', '/', null));
+});
 
 app.listen(port, hostname, function () {
   console.log(`Server running at http://${hostname}:${port}/`);
