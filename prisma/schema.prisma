@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bids {
+  id             Int           @id @default(autoincrement()) @db.UnsignedInt
+  request_id     Int           @db.UnsignedInt
+  provider_id    Int           @db.UnsignedInt
+  proposed_price Decimal       @db.Decimal(10, 2)
+  description    String        @db.Text
+  status         bids_status   @default(active)
+  created_at     DateTime      @default(now()) @db.Timestamp(0)
+  updated_at     DateTime      @default(now()) @db.Timestamp(0)
+  users          users         @relation(fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bids_provider")
+  care_requests  care_requests @relation(fields: [request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bids_request")
+
+  @@unique([request_id, provider_id], map: "uq_bid_request_provider")
+  @@index([provider_id], map: "idx_bids_provider")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model care_requests {
+  id               Int                   @id @default(autoincrement()) @db.UnsignedInt
+  owner_id         Int                   @db.UnsignedInt
+  pet_id           Int                   @db.UnsignedInt
+  service          care_requests_service
+  service_start    DateTime              @db.DateTime(0)
+  service_end      DateTime              @db.DateTime(0)
+  budget           Decimal               @db.Decimal(10, 2)
+  bidding_deadline DateTime              @db.DateTime(0)
+  instructions     String?               @db.Text
+  status           care_requests_status  @default(open)
+  created_at       DateTime              @default(now()) @db.Timestamp(0)
+  bids             bids[]
+  users            users                 @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_requests_owner")
+  pets             pets                  @relation(fields: [pet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_requests_pet")
+  request_tags     request_tags[]
+  reviews          reviews[]
+
+  @@index([owner_id], map: "idx_requests_owner")
+  @@index([pet_id], map: "idx_requests_pet")
+  @@index([status, service, budget], map: "idx_requests_search")
+}
+
+model pets {
+  id            Int             @id @default(autoincrement()) @db.UnsignedInt
+  owner_id      Int             @db.UnsignedInt
+  name          String          @db.VarChar(100)
+  pet_type      pets_pet_type
+  breed         String?         @db.VarChar(100)
+  age_years     Int?            @db.UnsignedSmallInt
+  photo_url     String?         @db.VarChar(2048)
+  created_at    DateTime        @default(now()) @db.Timestamp(0)
+  care_requests care_requests[]
+  users         users           @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pets_owner")
+
+  @@index([owner_id], map: "idx_pets_owner")
+}
+
+model request_tags {
+  request_id    Int           @db.UnsignedInt
+  tag           String        @db.VarChar(50)
+  care_requests care_requests @relation(fields: [request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tags_request")
+
+  @@id([request_id, tag])
+  @@index([tag], map: "idx_tags_tag")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reviews {
+  id                               Int           @id @default(autoincrement()) @db.UnsignedInt
+  request_id                       Int           @db.UnsignedInt
+  reviewer_id                      Int           @db.UnsignedInt
+  reviewee_id                      Int           @db.UnsignedInt
+  rating                           Int           @db.UnsignedTinyInt
+  comment                          String?       @db.Text
+  created_at                       DateTime      @default(now()) @db.Timestamp(0)
+  users_reviews_reviewer_idTousers users         @relation("reviews_reviewer_idTousers", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reviews_author")
+  care_requests                    care_requests @relation(fields: [request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reviews_request")
+  users_reviews_reviewee_idTousers users         @relation("reviews_reviewee_idTousers", fields: [reviewee_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reviews_subject")
+
+  @@unique([request_id, reviewer_id], map: "uq_review_per_request_author")
+  @@index([reviewer_id], map: "fk_reviews_author")
+  @@index([reviewee_id], map: "idx_reviews_reviewee")
+}
+
+model users {
+  id                                 Int                     @id @default(autoincrement()) @db.UnsignedInt
+  username                           String                  @unique(map: "uq_users_username") @db.VarChar(50)
+  email                              String                  @unique(map: "uq_users_email") @db.VarChar(255)
+  password_hash                      String                  @db.VarChar(255)
+  role                               users_role
+  provider_service                   users_provider_service?
+  provider_experience                String?                 @db.Text
+  created_at                         DateTime                @default(now()) @db.Timestamp(0)
+  bids                               bids[]
+  care_requests                      care_requests[]
+  pets                               pets[]
+  reviews_reviews_reviewer_idTousers reviews[]               @relation("reviews_reviewer_idTousers")
+  reviews_reviews_reviewee_idTousers reviews[]               @relation("reviews_reviewee_idTousers")
+}
+
+enum care_requests_service {
+  walking
+  bathing
+  grooming
+  feeding
+  sitting
+}
+
+enum pets_pet_type {
+  cat
+  dog
+  other
+}
+
+enum users_role {
+  owner
+  carer
+}
+
+enum bids_status {
+  active
+  withdrawn
+  accepted
+  rejected
+}
+
+enum users_provider_service {
+  walking
+  bathing
+  grooming
+  feeding
+  sitting
+}
+
+enum care_requests_status {
+  open
+  closed
+  assigned
+  completed
+  cancelled
+}
