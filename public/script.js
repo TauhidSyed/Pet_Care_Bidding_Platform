@@ -220,6 +220,7 @@ if (bidForm) {
     }
   });
 }
+<<<<<<< HEAD
 /*-- Request-details page (CARDS sample data) ---*/
 
 // T: Hard coded sample request so we can see how request-details looks like.
@@ -228,6 +229,8 @@ if (bidForm) {
 // T: Turns date-text thing into an object that JS can work with.
 // T: toLocaleString() method returns a Date object as a string, using local settings.
 
+=======
+>>>>>>> origin/Main
 /*-- Browse-Requests Page ---*/
 const browseRequestCards = document.querySelectorAll(".browse-request-card");
 const requestSearchInput = document.querySelector("#request-search");
