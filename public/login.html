@@ -16,13 +16,14 @@
             So the username part works with either username or email?
         -->
     <h1 id="login-header-one">Login</h1>
-    <form id="login-form">
+    <form id="login-form" action="/login" method="post">
       <div>
         <label for="username" class="">Username:</label>
         <input
           type="text"
           class="username"
           id="username"
+          name="username"
           placeholder="Please enter your username"
         />
       </div>
@@ -32,6 +33,7 @@
           type="password"
           class=""
           id="password"
+          name="password"
           placeholder="Please enter your password"
         />
       </div>
