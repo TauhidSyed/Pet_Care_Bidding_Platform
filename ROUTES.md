@@ -1,64 +1,85 @@
-# Route Plan (DRAFT: Umar to confirm)
+# Route Plan (confirmed, all built)
 
-Built from reading every HTML file. URLs for the POST routes are **proposals**: change them as you like, then tick "Confirmed".
+"Who" is checked by middleware in `server.js`:
+- **everyone**: no check
+- **logged in**: `authentication` (not logged in → redirect to `/login.html`)
+- **owner**: `ownerOnly` (not logged in → login page; provider → 403)
+- **provider**: `carerOnly` (not logged in → login page; owner → 403)
 
 ## Pages (GET)
 
-| Page/Action | URL | GET/POST | Who can use it | Status | Confirmed |
-|---|---|---|---|---|---|
-| Landing page | `/` (index.html) | GET | everyone | static, done | ☐ |
-| Register page | `/register.html` (`?role=owner` / `?role=carer` pre-selects the radio) | GET | everyone | static, done | ☐ |
-| Login page | `/login.html` | GET | everyone | static, done | ☐ |
-| Logged-out page | `/logged-out.html` | GET | everyone | static, done | ☐ |
-| Owner dashboard | `/owner-dashboard` | GET | owner | todo | ☐ |
-| Provider dashboard | `/provider-dashboard` | GET | provider | todo | ☐ |
-| Pets list + add form | `/pets` | GET | owner | todo | ☐ |
-| Create request form (pet dropdown from my pets) | `/create-request` | GET | owner | todo | ☐ |
-| My requests + bids on them | `/owner-requests` | GET | owner | todo | ☐ |
-| Browse open requests (filters + tag search) | `/browse-requests` | GET | provider | todo | ☐ |
-| Request details (+ bid form for providers) | `/requests/:id` | GET | owner (own) / provider | todo | ☐ |
-| My bids | `/bids` | GET | provider | todo | ☐ |
-| Reviews | `/reviews` | GET | owner / provider | todo | ☐ |
+| Page/Action | URL | GET/POST | Who can use it | Status |
+|---|---|---|---|---|
+| Landing page | `/` (index.html) | GET | everyone | done (static) |
+| Register page | `/register.html` (`?role=owner` / `?role=carer` pre-selects the radio) | GET | everyone | done (static) |
+| Login page | `/login.html` | GET | everyone | done (static) |
+| Logged-out page | `/logged-out.html` | GET | everyone | done (static) |
+| Owner dashboard | `/owner-dashboard` | GET | owner | done |
+| Provider dashboard | `/provider-dashboard` | GET | provider | done |
+| Pets list + add form | `/pets` | GET | owner | done |
+| Create request form (pet dropdown from my pets) | `/create-request` | GET | owner | done |
+| My requests + bids on them | `/owner-requests` | GET | owner | done |
+| Browse open requests (filters + tag search via `?search=&petType=&service=&maxBudget=`) | `/browse-requests` | GET | provider | done |
+| Request details (+ bid form for providers) | `/requests/:id` | GET | logged in (owners: only their own) | done |
+| My bids | `/bids` | GET | provider | done |
+| Reviews | `/reviews` | GET | logged in | done |
 
 ## Forms and actions
 
-| Page/Action | URL | GET/POST | Who can use it | Status | Confirmed |
-|---|---|---|---|---|---|
-| Register (register.html `#register-form`) | `/register` | POST | everyone | todo | ☐ |
-| Login (login.html `#login-form`) | `/login` | POST | everyone | todo | ☐ |
-| Logout (dashboard `#logout-btn`, "Log Out" links) | `/logout` | GET | owner / provider | todo | ☐ |
-| Add pet (pets.html `#pet-form`) | `/pets` | POST | owner | todo | ☐ |
-| Create request (create-request.html `#create-request-form`) | `/requests` | POST | owner | todo | ☐ |
-| Select winning bid (owner-requests.html `#choose-provider-form`) | `/requests/:id/select-bid` | POST | owner | todo | ☐ |
-| Close request (owner-requests.html `#close-owner-request`) | `/requests/:id/close` | POST | owner | todo | ☐ |
-| Mark request completed (**no button exists yet**) | `/requests/:id/complete` | POST | owner | todo | ☐ |
-| Submit bid (request-details.html `#bid-form`) | `/requests/:id/bids` | POST | provider | todo | ☐ |
-| Edit bid (bids.html `.bid-edit-form`) | `/bids/:id/edit` | POST | provider | todo | ☐ |
-| Withdraw bid (bids.html `.withdraw-bid`) | `/bids/:id/withdraw` | POST | provider | todo | ☐ |
-| Leave review (reviews.html `#review-form`) | `/reviews` | POST | owner / provider | todo | ☐ |
+| Page/Action | URL | GET/POST | Who can use it | Status |
+|---|---|---|---|---|
+| Register | `/register` | POST | everyone | done |
+| Login | `/login` | POST | everyone | done |
+| Logout | `/logout` | GET | everyone | done |
+| Add pet | `/pets` | POST | owner | done |
+| Create request | `/requests` | POST | owner | done |
+| Select winning bid | `/requests/:id/select-bid` | POST | owner (own request) | done |
+| Close request | `/requests/:id/close` | POST | owner (own request) | done |
+| Mark request completed | `/requests/:id/complete` | POST | owner (own request) | done |
+| Submit bid | `/requests/:id/bids` | POST | provider | done |
+| Edit bid | `/bids/:id/edit` | POST | provider (own bid) | done |
+| Withdraw bid | `/bids/:id/withdraw` | POST | provider (own bid) | done |
+| Leave review | `/reviews` | POST | owner or winning provider of a completed request | done |
+| Anything else | any | any | everyone | 404 page |
 
 Why POST for edit/withdraw instead of PUT/DELETE: a plain HTML `<form>` can only send GET or POST.
-PUT/DELETE would need `fetch()` in script.js.
 
-## Form field names (what will arrive in `req.body`)
+## Form field names (what arrives in `req.body` / `req.query`)
 
 | Form | Fields |
 |---|---|
 | register | `userType` (owner/carer), `username`, `email`, `password`, `confirmPassword`, `providerService`, `providerExperience` |
-| login | **none yet**: inputs have `id` but no `name` |
+| login | `username`, `password` (**login.html still needs the `name`s, see FRONTEND_CHANGES.md**) |
 | pets | `petName`, `petType`, `petBreed`, `petAge`, `petPhoto` |
-| create-request | `petId`, `service`, `startTime`, `endTime`, `budget`, `deadline`, `instructions` |
-| bid | `bidPrice`, `bidDescription` |
-| bid edit | **none yet** (no `name` attributes) |
-| choose provider | **none yet** (`#winning-provider` has no `name`) |
-| review | **none yet** (`#review-service`, `#review-rating`, `#review-comment` have no `name`) |
+| create-request | `petId`, `service`, `startTime`, `endTime`, `budget`, `deadline`, `instructions`, `tags` |
+| bid / edit bid | `bidPrice`, `bidDescription` |
+| select winner | `winningBidId` |
+| review | `requestId`, `rating`, `comment` |
+| browse filters (query string) | `search`, `petType`, `service`, `maxBudget` |
 
-## Front-end changes needed (coordinate with teammates, do NOT edit yourself)
+## Status rules
 
-1. **No form actually submits.** Every form has no `action`/`method`, and script.js calls `preventDefault()` on all of them. Each form needs `action="..." method="POST"`, and script.js should only call `preventDefault()` when validation **fails**.
-2. **Missing `name` attributes**: login inputs, bid edit form, `#winning-provider`, all review fields. Without `name`, the value never reaches `req.body`.
-3. Register password input is `type="text"` (shows the password). It should be `type="password"`.
-4. **Option values don't match between pages**: browse filter has `feeding`, `bird` and `rabbit`, but create-request/pets only offer walking/bathing/grooming and cat/dog/other. Pick one list.
-5. No "mark as completed" button exists for owners, so there's no way to move a request to `completed`.
-6. `browse-requests.html` is in `public/`, but only providers should browse. Decide: keep it public, or move it behind login.
-7. Pages link to `*.html` (e.g. `href="pets.html"`). Once the server builds those pages, links should point at the routes (`/pets`, `/requests/1`, ...).
+- Request: `open` → `closed` (winner picked, or owner closed it) → `completed` (only if there is a winner).
+- Bid: `pending` → `accepted` / `rejected` (when the owner picks) or `withdrawn` (by the provider).
+- Bids can be placed, edited or withdrawn only while the request is `open` **and** before its `deadline`.
+
+## Front-end changes
+
+See **FRONTEND_CHANGES.md**.
+
+## Notes for the DB teammate (data.js vs pet_care_schema.sql)
+
+Every array read and write in `logic.js` is marked `// DB: replace with prisma call (...)`. Some names differ between `data.js` and the SQL schema:
+
+| data.js | schema | Note |
+|---|---|---|
+| `userType` | `role` | same values (owner/carer) |
+| `password` (holds the bcrypt hash) | `password_hash` | |
+| `petName`, `petBreed`, `petAge`, `petPhoto` | `name`, `breed`, `age_years`, `photo_url` | |
+| `startTime`, `endTime`, `deadline` | `service_start`, `service_end`, `bidding_deadline` | |
+| `winningBidId` on requests | **missing** | add a nullable `winning_bid_id`, or find the bid with status `accepted` |
+| `tags` (one space-separated string) | `request_tags` table | split on spaces when saving |
+| `carerId`, `bidPrice`, `bidDescription` | `provider_id`, `proposed_price`, `description` | |
+| bid status `pending` | `active` | rename one side. Schema also has request statuses `assigned` / `cancelled` that the app doesn't use |
+
+Re-bidding after a withdraw reuses the same bid row, so the schema's `UNIQUE (request_id, provider_id)` is respected.
