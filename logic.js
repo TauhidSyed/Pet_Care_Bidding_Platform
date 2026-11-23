@@ -1022,7 +1022,67 @@ function getReviewsPage(userId) {
 }
 
 
-/* ---- (more sections are added below: dashboards) ---- */
+/* =====================================================================
+   DASHBOARDS
+   ===================================================================== */
+
+/*
+  getOwnerDashboard(ownerId)
+  The numbers and lists on the owner dashboard.
+  OUT: { ok: true, pets, openRequests, closedRequests, completedRequests }
+       each request list holds { request, pet }.
+       (closedRequests = a provider was chosen but the service isn't done yet = "active".)
+*/
+function getOwnerDashboard(ownerId) {
+  const requests = getRequestsForOwner(ownerId);
+  const openRequests = [];
+  const closedRequests = [];
+  const completedRequests = [];
+  for (let i = 0; i < requests.length; i++) {
+    const item = { request: requests[i], pet: findPetById(requests[i].petId) };
+    if (requests[i].status === 'open') {
+      openRequests.push(item);
+    } else if (requests[i].status === 'closed') {
+      closedRequests.push(item);
+    } else if (requests[i].status === 'completed') {
+      completedRequests.push(item);
+    }
+  }
+  return {
+    ok: true,
+    pets: getPetsForOwner(ownerId),
+    openRequests: openRequests,
+    closedRequests: closedRequests,
+    completedRequests: completedRequests
+  };
+}
+
+/*
+  getProviderDashboard(carerId)
+  The numbers and lists on the provider dashboard, all built from this provider's bids.
+  OUT: { ok: true, currentTasks, activeBids, completedTasks }, each a list of { bid, request, pet }
+       - currentTasks:   my bid won ("accepted") and the request is "closed" (job not done yet)
+       - activeBids:     my bid is "pending" and the request is still "open"
+       - completedTasks: my bid won and the request is "completed"
+*/
+function getProviderDashboard(carerId) {
+  const all = getCarerBids(carerId).items;
+  const currentTasks = [];
+  const activeBids = [];
+  const completedTasks = [];
+  for (let i = 0; i < all.length; i++) {
+    const bid = all[i].bid;
+    const request = all[i].request;
+    if (bid.status === 'accepted' && request.status === 'closed') {
+      currentTasks.push(all[i]);
+    } else if (bid.status === 'accepted' && request.status === 'completed') {
+      completedTasks.push(all[i]);
+    } else if (bid.status === 'pending' && request.status === 'open') {
+      activeBids.push(all[i]);
+    }
+  }
+  return { ok: true, currentTasks: currentTasks, activeBids: activeBids, completedTasks: completedTasks };
+}
 
 
 /*
@@ -1053,5 +1113,7 @@ module.exports = {
   withdrawBid: withdrawBid,
   getCarerBids: getCarerBids,
   addReview: addReview,
-  getReviewsPage: getReviewsPage
+  getReviewsPage: getReviewsPage,
+  getOwnerDashboard: getOwnerDashboard,
+  getProviderDashboard: getProviderDashboard
 };

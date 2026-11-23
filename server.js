@@ -225,7 +225,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 /* =====================================================================
    5. OWNER ROUTES (logged in + userType "owner")
    ===================================================================== */
-// TODO(Umar): GET  /owner-dashboard           -> counts of my pets / open / completed requests
+/*
+  GET /owner-dashboard
+  OUT: the owner dashboard: counts + lists of my pets, open, active and completed requests.
+*/
+app.get('/owner-dashboard', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  res.send(pages.ownerDashboardPage(user, logic.getOwnerDashboard(user.id)));
+});
 // Every route here has `ownerOnly` in front: not logged in -> login page, provider -> 403.
 // The owner's id always comes from the SESSION, never from the form, so nobody can act as someone else.
 
@@ -335,7 +342,14 @@ app.post('/requests/:id/complete', ownerOnly, function (req, res) {
 /* =====================================================================
    6. PROVIDER ROUTES (logged in + userType "carer")
    ===================================================================== */
-// TODO(Umar): GET  /provider-dashboard        -> counts of my current tasks / active bids / completed
+/*
+  GET /provider-dashboard
+  OUT: the provider dashboard: counts + lists of current tasks, active bids, completed jobs.
+*/
+app.get('/provider-dashboard', carerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  res.send(pages.providerDashboardPage(user, logic.getProviderDashboard(user.id)));
+});
 // Every route here has `carerOnly` in front: not logged in -> login page, owner -> 403.
 
 /*
@@ -460,16 +474,23 @@ app.post('/reviews', authentication, function (req, res) {
   res.redirect('/reviews');
 });
 
-//app.use(authentication, express.static(path.join(__dirname, 'private')));
-// J: Authentications here for the rest of the files. Need to define a function called "authentication" for this to work.
-// Umar: once the routes above build these pages dynamically, decide if this line is still needed.
+// Umar: J's old plan was  app.use(authentication, express.static(path.join(__dirname, 'private')));
+// We don't need it any more: every private page is now built by a route above (with its own
+// login/role check), so the static files in private/ are never sent to the browser.
 
 /* =====================================================================
    8. 404 (must stay LAST)
    ===================================================================== */
-app.use((req, res) => res.status(404).send('Not found'));
+/*
+  If no route or static file above matched the URL, we end up here.
+  It must be the LAST app.use, because Express checks routes from top to bottom.
+  We show the same error page as everywhere else (with a link home).
+*/
+app.use(function (req, res) {
+  res.status(404).send(pages.errorPage(404, 'Page not found.', '/', getCurrentUser(req)));
+});
 // J: This basically handles anything that gets to this point and
 
-app.listen(port, hostname, () => {
+app.listen(port, hostname, function () {
   console.log(`Server running at http://${hostname}:${port}/`);
 });

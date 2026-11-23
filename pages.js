@@ -673,7 +673,105 @@ function reviewsPage(user, info) {
 }
 
 
-/* ---- (more pages are added below: dashboards) ---- */
+/* =====================================================================
+   DASHBOARDS
+   Same layout as owner-dashboard.html / provider-dashboard.html:
+   3 number cards on top, then the lists, then "What would you like to do?" cards.
+   ===================================================================== */
+
+// One of the 3 number cards at the top ("Your Pets  2").
+function statCard(title, count) {
+  return '<div class="col-md-4 mb-3"><div class="card p-4"><h2 class="card-title mb-2">' + title +
+    '</h2><div class="stat-number">' + count + '</div></div></div>';
+}
+
+// One of the "What would you like to do?" cards: a title, a sentence, a button link.
+function actionCard(title, text, url, buttonText) {
+  return '<div class="col-md-6 mb-4"><div class="card p-4 h-100 d-flex flex-column">' +
+    '<h3 class="card-title dashboard-card-title">' + title + '</h3>' +
+    '<p class="text-muted mb-4">' + text + '</p>' +
+    '<div class="mt-auto"><a href="' + url + '" class="btn btn-primary mt-0">' + buttonText + '</a></div>' +
+    '</div></div>';
+}
+
+/*
+  requestListCard(title, items, emptyText)
+  A card with a short list of requests: "Pet walking for Cloud - 12/5/2026 ..." each linking
+  to its details page. items = [{ request, pet }] (bid items also have these two fields).
+*/
+function requestListCard(title, items, emptyText) {
+  let html = '<div class="col-md-4 mb-3"><section class="card p-4 h-100"><h2 class="h5 card-title">' + title + '</h2>';
+  if (items.length === 0) {
+    html += '<p class="text-muted mb-0">' + emptyText + '</p>';
+  }
+  html += '<ul class="list-unstyled mb-0">';
+  for (let i = 0; i < items.length; i++) {
+    const request = items[i].request;
+    html += '<li class="mb-2"><a href="/requests/' + request.id + '">' + serviceLabel(request.service) + ' for ' +
+      escapeHtml(items[i].pet.petName) + '</a><br /><span class="text-muted small">' + formatDate(request.startTime) + '</span></li>';
+  }
+  html += '</ul></section></div>';
+  return html;
+}
+
+/*
+  ownerDashboardPage(user, dash)
+  dash comes from logic.getOwnerDashboard.
+*/
+function ownerDashboardPage(user, dash) {
+  let html = pageStart('Dashboard', 'Welcome back, ' + user.username + '!', 'Manage your pets and care requests from here.', user);
+
+  html += '<div class="row mb-3 text-center">';
+  html += statCard('Your Pets', dash.pets.length);
+  html += statCard('Open Requests', dash.openRequests.length);
+  html += statCard('Completed Requests', dash.completedRequests.length);
+  html += '</div>';
+
+  html += '<div class="row mb-3">';
+  html += requestListCard('Open (taking bids)', dash.openRequests, 'No open requests.');
+  html += requestListCard('Active (provider chosen)', dash.closedRequests, 'Nothing in progress.');
+  html += requestListCard('Completed', dash.completedRequests, 'Nothing completed yet.');
+  html += '</div>';
+
+  html += '<h2 class="text-center mb-4">What would you like to do?</h2><div class="row">';
+  html += actionCard('Manage Your Pets', 'View and add your pet profiles.', '/pets', 'View Pets');
+  html += actionCard('Create a Care Request', 'Tell providers what service your pet needs and when.', '/create-request', 'Create Request');
+  html += actionCard('My Requests', 'Review your requests and compare provider bids.', '/owner-requests', 'View Requests');
+  html += actionCard('Reviews', 'Read and leave reviews for completed care services.', '/reviews', 'View Reviews');
+  html += '</div>';
+
+  html += pageEnd();
+  return html;
+}
+
+/*
+  providerDashboardPage(user, dash)
+  dash comes from logic.getProviderDashboard.
+*/
+function providerDashboardPage(user, dash) {
+  let html = pageStart('Dashboard', 'Welcome back, ' + user.username + '!', 'Find requests, manage your bids and track your jobs.', user);
+
+  html += '<div class="row mb-3 text-center">';
+  html += statCard('Current Tasks', dash.currentTasks.length);
+  html += statCard('Active Bids', dash.activeBids.length);
+  html += statCard('Completed Requests', dash.completedTasks.length);
+  html += '</div>';
+
+  html += '<div class="row mb-3">';
+  html += requestListCard('Current Tasks (you won)', dash.currentTasks, 'No current tasks.');
+  html += requestListCard('Active Bids', dash.activeBids, 'No active bids.');
+  html += requestListCard('Completed', dash.completedTasks, 'Nothing completed yet.');
+  html += '</div>';
+
+  html += '<h2 class="text-center mb-4">What would you like to do?</h2><div class="row">';
+  html += actionCard('Browse Requests', 'Find care requests that match the service you provide.', '/browse-requests', 'Browse Requests');
+  html += actionCard('Your Bids', 'Edit or withdraw the bids you have placed.', '/bids', 'View Bids');
+  html += actionCard('Your Reviews', 'See what owners said about you and review them back.', '/reviews', 'View Reviews');
+  html += '</div>';
+
+  html += pageEnd();
+  return html;
+}
 
 
 // module.exports: lets server.js use these functions with require('./pages').
@@ -686,5 +784,7 @@ module.exports = {
   browsePage: browsePage,
   requestDetailsPage: requestDetailsPage,
   bidsPage: bidsPage,
-  reviewsPage: reviewsPage
+  reviewsPage: reviewsPage,
+  ownerDashboardPage: ownerDashboardPage,
+  providerDashboardPage: providerDashboardPage
 };
