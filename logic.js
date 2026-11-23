@@ -648,7 +648,255 @@ function completeRequest(ownerId, requestId) {
 }
 
 
-/* ---- (more sections are added below: provider, reviews, dashboards) ---- */
+/* =====================================================================
+   PROVIDER: BROWSING + REQUEST DETAILS
+   ===================================================================== */
+
+/*
+  browseRequests(query)
+  The list on the Browse page, filtered on the SERVER (the page also filters live
+  in the browser with script.js; doing it here too means it works without JavaScript).
+  IN:  query = req.query: search, petType, service, maxBudget (all optional, "" = no filter)
+  RULES: only requests that are "open" AND still before their deadline are shown.
+         search matches pet name/type/breed, service, instructions AND the tags field
+         (our tag-search extra feature), ignoring upper/lower case.
+  OUT: { ok: true, items } where each item is { request, pet }
+*/
+function browseRequests(query) {
+  const search = cleanText(query.search).toLowerCase();
+  const petType = cleanText(query.petType);
+  const service = cleanText(query.service);
+  const maxBudgetText = cleanText(query.maxBudget);
+  const maxBudget = Number(maxBudgetText);
+
+  const items = [];
+  for (let i = 0; i < data.requests.length; i++) { // DB: replace with prisma call (prisma.careRequest.findMany where status open, deadline > now)
+    const request = data.requests[i];
+    // `continue` = skip this request and go to the next one in the loop.
+    if (request.status !== 'open' || !isBeforeDeadline(request)) {
+      continue;
+    }
+    const pet = findPetById(request.petId);
+    if (petType !== '' && pet.petType !== petType) {
+      continue;
+    }
+    if (service !== '' && request.service !== service) {
+      continue;
+    }
+    // Only filter by budget if a real number was typed in.
+    if (maxBudgetText !== '' && Number.isFinite(maxBudget) && request.budget > maxBudget) {
+      continue;
+    }
+    if (search !== '') {
+      // One lowercase string with everything searchable, then check if the search text is inside it.
+      const searchable = (pet.petName + ' ' + pet.petType + ' ' + pet.petBreed + ' ' + request.service + ' ' +
+        request.instructions + ' ' + request.tags).toLowerCase();
+      if (!searchable.includes(search)) {
+        continue;
+      }
+    }
+    items.push({ request: request, pet: pet });
+  }
+  return { ok: true, items: items };
+}
+
+/*
+  getRequestDetails(user, requestId)
+  Everything the request details page needs.
+  IN:  user = the logged-in user object, requestId from the URL
+  RULES: 404 if it doesn't exist. Owners may only open THEIR OWN requests (403 otherwise).
+         Providers may open any request.
+  OUT: { ok: true, request, pet, bids, myBid, canBid }
+       - bids: all bids with their provider ({ bid, carer }), only filled in for the owner
+       - myBid: this provider's own bid on it (or null)
+       - canBid: true if this provider may submit a bid right now
+*/
+function getRequestDetails(user, requestId) {
+  const request = findRequestById(requestId);
+  if (request === null) {
+    return fail(404, ['That request does not exist.']);
+  }
+  if (user.userType === 'owner' && request.ownerId !== user.id) {
+    return fail(403, ['This is not your request.']);
+  }
+
+  const bids = [];
+  let myBid = null;
+  let canBid = false;
+  if (user.userType === 'owner') {
+    const requestBids = getBidsForRequest(request.id);
+    for (let i = 0; i < requestBids.length; i++) {
+      bids.push({ bid: requestBids[i], carer: findUserById(requestBids[i].carerId) });
+    }
+  } else {
+    myBid = findBidByRequestAndCarer(request.id, user.id);
+    // A provider can bid if the request is open, the deadline hasn't passed,
+    // and they have no bid yet (or only a withdrawn one).
+    canBid = request.status === 'open' && isBeforeDeadline(request) &&
+      (myBid === null || myBid.status === 'withdrawn');
+  }
+  return { ok: true, request: request, pet: findPetById(request.petId), bids: bids, myBid: myBid, canBid: canBid };
+}
+
+
+/* =====================================================================
+   PROVIDER: BIDS
+   ===================================================================== */
+
+/*
+  checkBidDetails(bidPrice, bidDescription)
+  Shared validation for placing and editing a bid (same rules as script.js).
+  OUT: an array of error messages (empty = all good).
+*/
+function checkBidDetails(bidPrice, bidDescription) {
+  const errors = [];
+  const priceText = cleanText(bidPrice);
+  const price = Number(priceText);
+  if (priceText === '' || !Number.isFinite(price) || price <= 0) {
+    errors.push('Enter a bid price greater than zero.');
+  }
+  if (cleanText(bidDescription).length < 10) {
+    errors.push('Describe your service in at least 10 characters.');
+  }
+  return errors;
+}
+
+/*
+  placeBid(requestId, carerId, bidPrice, bidDescription)
+  A provider submits a bid on a request.
+  IN:  requestId (URL), carerId (session), bidPrice + bidDescription (form)
+  RULES: request exists (404), status is "open", deadline not passed,
+         price > 0, description at least 10 characters,
+         and NO existing bid from this provider unless it was withdrawn.
+  DOES: new bid with status "pending". If they had WITHDRAWN a bid on this request before,
+        we reuse that same bid instead of making a second one: the database (pet_care_schema.sql)
+        only allows ONE bid per provider per request (UNIQUE request_id + provider_id).
+  OUT: { ok: true, bid } or { ok: false, status, error }
+*/
+function placeBid(requestId, carerId, bidPrice, bidDescription) {
+  const request = findRequestById(requestId);
+  if (request === null) {
+    return fail(404, ['That request does not exist.']);
+  }
+  // These two checks are what "block bids after a request is closed" means.
+  if (request.status !== 'open') {
+    return fail(400, ['This request is closed. Bids are no longer accepted.']);
+  }
+  if (!isBeforeDeadline(request)) {
+    return fail(400, ['The bidding deadline has passed. Bids are no longer accepted.']);
+  }
+  const errors = checkBidDetails(bidPrice, bidDescription);
+  if (errors.length > 0) {
+    return fail(400, errors);
+  }
+
+  const existing = findBidByRequestAndCarer(request.id, carerId);
+  if (existing !== null && existing.status !== 'withdrawn') {
+    return fail(400, ['You already bid on this request. Edit your bid on the My Bids page instead.']);
+  }
+  if (existing !== null) {
+    // Re-bidding after a withdraw: bring the old bid back with the new details.
+    existing.bidPrice = Number(cleanText(bidPrice));       // DB: replace with prisma call (prisma.bid.update)
+    existing.bidDescription = cleanText(bidDescription);   // DB: replace with prisma call (same update)
+    existing.status = 'pending';                           // DB: replace with prisma call (same update)
+    return { ok: true, bid: existing };
+  }
+
+  const newBid = {
+    id: nextId(data.bids), // DB: replace with prisma call (id comes from AUTO_INCREMENT)
+    requestId: request.id,
+    carerId: carerId,
+    bidPrice: Number(cleanText(bidPrice)),
+    bidDescription: cleanText(bidDescription),
+    status: 'pending'
+  };
+  data.bids.push(newBid); // DB: replace with prisma call (prisma.bid.create)
+  return { ok: true, bid: newBid };
+}
+
+/*
+  checkBidCanChange(carerId, bidId)
+  Shared checks before editing OR withdrawing a bid.
+  RULES: bid exists (404), it's YOUR bid (403), it's still "pending",
+         and its request is still open and before the deadline.
+  OUT: { ok: true, bid, request } or { ok: false, status, error }
+*/
+function checkBidCanChange(carerId, bidId) {
+  const bid = findBidById(bidId);
+  if (bid === null) {
+    return fail(404, ['That bid does not exist.']);
+  }
+  if (bid.carerId !== carerId) {
+    return fail(403, ['This is not your bid.']);
+  }
+  if (bid.status !== 'pending') {
+    return fail(400, ['Only pending bids can be changed.']);
+  }
+  const request = findRequestById(bid.requestId);
+  if (request.status !== 'open' || !isBeforeDeadline(request)) {
+    return fail(400, ['Bidding on this request is over, so the bid can no longer be changed.']);
+  }
+  return { ok: true, bid: bid, request: request };
+}
+
+/*
+  editBid(carerId, bidId, bidPrice, bidDescription)
+  A provider changes the price/description of their own pending bid.
+  RULES: checkBidCanChange + the same price/description rules as placeBid.
+  OUT: { ok: true, bid } or { ok: false, status, error }
+*/
+function editBid(carerId, bidId, bidPrice, bidDescription) {
+  const check = checkBidCanChange(carerId, bidId);
+  if (!check.ok) {
+    return check;
+  }
+  const errors = checkBidDetails(bidPrice, bidDescription);
+  if (errors.length > 0) {
+    return fail(400, errors);
+  }
+  check.bid.bidPrice = Number(cleanText(bidPrice));        // DB: replace with prisma call (prisma.bid.update)
+  check.bid.bidDescription = cleanText(bidDescription);    // DB: replace with prisma call (same update)
+  return { ok: true, bid: check.bid };
+}
+
+/*
+  withdrawBid(carerId, bidId)
+  A provider takes back their own pending bid.
+  RULES: same as checkBidCanChange.
+  DOES: bid status -> "withdrawn" (we keep it rather than delete it, so there's a history,
+        and so placeBid can reuse it if they bid again).
+*/
+function withdrawBid(carerId, bidId) {
+  const check = checkBidCanChange(carerId, bidId);
+  if (!check.ok) {
+    return check;
+  }
+  check.bid.status = 'withdrawn'; // DB: replace with prisma call (prisma.bid.update status withdrawn)
+  return { ok: true, bid: check.bid };
+}
+
+/*
+  getCarerBids(carerId)
+  Everything the "My Bids" page needs.
+  OUT: { ok: true, items } where each item is { bid, request, pet, canChange }
+       canChange = true if the edit/withdraw buttons should be shown.
+*/
+function getCarerBids(carerId) {
+  const items = [];
+  for (let i = 0; i < data.bids.length; i++) { // DB: replace with prisma call (prisma.bid.findMany where carerId)
+    const bid = data.bids[i];
+    if (bid.carerId !== carerId) {
+      continue;
+    }
+    const request = findRequestById(bid.requestId);
+    const canChange = bid.status === 'pending' && request.status === 'open' && isBeforeDeadline(request);
+    items.push({ bid: bid, request: request, pet: findPetById(request.petId), canChange: canChange });
+  }
+  return { ok: true, items: items };
+}
+
+
+/* ---- (more sections are added below: reviews, dashboards) ---- */
 
 
 /*
@@ -671,5 +919,11 @@ module.exports = {
   getOwnerRequests: getOwnerRequests,
   selectWinningBid: selectWinningBid,
   closeRequest: closeRequest,
-  completeRequest: completeRequest
+  completeRequest: completeRequest,
+  browseRequests: browseRequests,
+  getRequestDetails: getRequestDetails,
+  placeBid: placeBid,
+  editBid: editBid,
+  withdrawBid: withdrawBid,
+  getCarerBids: getCarerBids
 };

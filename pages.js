@@ -373,7 +373,219 @@ function ownerRequestsPage(user, items) {
 }
 
 
-/* ---- (more pages are added below: provider, reviews, dashboards) ---- */
+/* =====================================================================
+   PROVIDER PAGES
+   ===================================================================== */
+
+/*
+  browsePage(user, items, query, services, petTypes)
+  "Browse Care Requests". Two kinds of filtering work together:
+    1. SERVER: the filters are a GET form (action="/browse-requests"), so pressing
+       "Apply Filters" sends ?search=...&petType=... and the route filters with req.query.
+    2. BROWSER: script.js still filters the cards live while you type. For that it needs the
+       same ids (#request-search, #pet-type-filter, ...) and the data-* attributes on each card.
+  EXTRA FEATURE (tag search): each card's data-search holds the request's tags, which
+  script.js searches; the server search checks the tags too.
+  items = [{ request, pet }] from logic.browseRequests, query = req.query (to keep the typed values).
+*/
+function browsePage(user, items, query, services, petTypes) {
+  let html = pageStart('Requests', 'Browse Care Requests', 'Find a request that matches the care you provide.', user);
+
+  // Keep what the user typed in the boxes after the page reloads.
+  let search = '';
+  let petType = '';
+  let service = '';
+  let maxBudget = '';
+  if (query.search) { search = String(query.search); }
+  if (query.petType) { petType = String(query.petType); }
+  if (query.service) { service = String(query.service); }
+  if (query.maxBudget) { maxBudget = String(query.maxBudget); }
+
+  const serviceLabels = [];
+  for (let i = 0; i < services.length; i++) {
+    serviceLabels.push(serviceLabel(services[i]));
+  }
+  const petTypeLabels = ['Cat', 'Dog', 'Other'];
+
+  html += '<section class="card p-4 mb-4"><h2 class="card-title">Find Requests</h2>';
+  html += '<form action="/browse-requests" method="GET"><div class="row g-3">';
+  html += '<div class="col-12 col-md-6 col-lg-4"><label for="request-search" class="form-label">Search:</label>';
+  html += '<input type="search" class="form-control" id="request-search" name="search" placeholder="Search pet, instructions or tags" value="' + escapeHtml(search) + '" /></div>';
+  html += '<div class="col-12 col-md-6 col-lg-3"><label for="pet-type-filter" class="form-label">Pet type:</label>';
+  html += '<select class="form-select" id="pet-type-filter" name="petType"><option value="">All pet types</option>' + optionsHtml(petTypes, petTypeLabels, petType) + '</select></div>';
+  html += '<div class="col-12 col-md-6 col-lg-3"><label for="service-filter" class="form-label">Service:</label>';
+  html += '<select class="form-select" id="service-filter" name="service"><option value="">All services</option>' + optionsHtml(services, serviceLabels, service) + '</select></div>';
+  html += '<div class="col-12 col-md-6 col-lg-2"><label for="budget-filter" class="form-label">Max budget (AED):</label>';
+  html += '<input type="number" class="form-control" id="budget-filter" name="maxBudget" placeholder="Any" value="' + escapeHtml(maxBudget) + '" /></div>';
+  html += '</div><div class="mt-3 d-flex gap-2">';
+  html += '<button type="submit" class="btn btn-primary mt-0">Apply Filters</button>';
+  // A link back to /browse-requests with no ?query = no server filters. script.js also clears the boxes on click.
+  html += '<a href="/browse-requests" id="clear-filters" class="btn btn-primary btn-clear mt-0">Clear Filters</a>';
+  html += '</div></form></section>';
+
+  html += '<div class="d-flex justify-content-between align-items-center mb-3">';
+  html += '<h2 class="card-title mb-0">Available Requests</h2>';
+  html += '<p id="request-count" class="text-muted mb-0">' + items.length + ' requests found</p></div>';
+  // Shown only when there are no cards.
+  let hiddenAttr = '';
+  if (items.length > 0) {
+    hiddenAttr = ' hidden';
+  }
+  html += '<p id="no-requests-message" class="text-muted"' + hiddenAttr + '>No requests match those filters.</p>';
+
+  html += '<div class="row g-4" id="request-list">';
+  for (let i = 0; i < items.length; i++) {
+    const request = items[i].request;
+    const pet = items[i].pet;
+    // data-* attributes: script.js reads these to filter without reloading.
+    html += '<div class="col-12 col-md-6 col-lg-4 browse-request-card"';
+    html += ' data-pet="' + escapeHtml(pet.petName) + '"';
+    html += ' data-pet-type="' + escapeHtml(pet.petType) + '"';
+    html += ' data-service="' + escapeHtml(request.service) + '"';
+    html += ' data-service-name="' + serviceLabel(request.service) + '"';
+    html += ' data-budget="' + escapeHtml(request.budget) + '"';
+    html += ' data-start="' + escapeHtml(request.startTime) + '"';
+    html += ' data-end="' + escapeHtml(request.endTime) + '"';
+    html += ' data-deadline="' + escapeHtml(request.deadline) + '"';
+    html += ' data-instructions="' + escapeHtml(request.instructions) + '"';
+    html += ' data-search="' + escapeHtml(request.tags) + '">';
+    html += '<div class="card p-4 h-100">';
+    html += '<h3 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(pet.petName) + '</h3>';
+    html += '<p><strong>Pet:</strong> ' + escapeHtml(pet.petName) + ' - ' + escapeHtml(pet.petType) + '</p>';
+    html += '<p><strong>Service:</strong> ' + serviceLabel(request.service) + '</p>';
+    html += '<p><strong>Service date:</strong> ' + formatDate(request.startTime) + '</p>';
+    html += '<p><strong>Budget:</strong> AED ' + escapeHtml(request.budget) + '</p>';
+    html += '<p><strong>Bidding deadline:</strong> ' + formatDate(request.deadline) + '</p>';
+    if (request.instructions !== '') {
+      html += '<p class="text-muted">' + escapeHtml(request.instructions) + '</p>';
+    }
+    if (request.tags !== '') {
+      html += '<p class="text-muted small">Tags: ' + escapeHtml(request.tags) + '</p>';
+    }
+    html += '<a href="/requests/' + request.id + '" class="btn btn-primary view-request mt-auto">View Request</a>';
+    html += '</div></div>';
+  }
+  html += '</div>';
+
+  html += pageEnd();
+  return html;
+}
+
+/*
+  requestDetailsPage(user, details)
+  "Care Request Details". details comes from logic.getRequestDetails.
+  - Providers see the bid form (only if details.canBid) or their existing bid.
+  - Owners see the list of bids on their request.
+  NOTE: the info card uses id="request-info", NOT "request-details-card": script.js fills
+  "#request-details-card" with hard-coded sample data and would overwrite our real data.
+*/
+function requestDetailsPage(user, details) {
+  const request = details.request;
+  const pet = details.pet;
+  let html = pageStart('Request Details', 'Care Request Details', '', user);
+
+  html += '<div class="row justify-content-center mt-3">';
+  html += '<div class="col-12 col-lg-7 mb-4"><section id="request-info" class="card p-4 h-100">';
+  html += '<h2 class="card-title">Request Information</h2><div class="row">';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Pet:</strong></p><p>' + escapeHtml(pet.petName) + ' - ' + escapeHtml(pet.petType) + ' (' + escapeHtml(pet.petBreed) + ')</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Service:</strong></p><p>' + serviceLabel(request.service) + '</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Service starts:</strong></p><p>' + formatDate(request.startTime) + '</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Service ends:</strong></p><p>' + formatDate(request.endTime) + '</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Budget:</strong></p><p>AED ' + escapeHtml(request.budget) + '</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Bidding deadline:</strong></p><p>' + formatDate(request.deadline) + '</p></div>';
+  html += '<div class="col-12 col-md-6"><p class="mb-1"><strong>Status:</strong></p><p>' + statusLabel(request.status) + '</p></div>';
+  html += '<div class="col-12"><p class="mb-1"><strong>Care instructions:</strong></p><p>' + escapeHtml(request.instructions) + '</p></div>';
+  html += '</div></section></div>';
+
+  html += '<div class="col-12 col-lg-5 mb-4">';
+  if (user.userType === 'carer') {
+    if (details.canBid) {
+      // Same ids as request-details.html so script.js validates it. Posts to POST /requests/:id/bids.
+      html += '<form id="bid-form" action="/requests/' + request.id + '/bids" method="POST" novalidate>';
+      html += '<h2 class="card-title">Submit a Bid</h2>';
+      html += '<div class="mb-3"><label for="bid-price" class="form-label">Proposed price (AED):</label>';
+      html += '<input type="number" class="form-control" id="bid-price" name="bidPrice" /></div>';
+      html += '<div class="mb-3"><label for="bid-description" class="form-label">Service description:</label>';
+      html += '<textarea class="form-control" id="bid-description" name="bidDescription" rows="4"></textarea></div>';
+      html += '<p id="bid-message" aria-live="polite"></p>';
+      html += '<button type="submit" class="btn btn-primary">Submit Bid</button>';
+      html += '</form>';
+    } else if (details.myBid !== null && details.myBid.status !== 'withdrawn') {
+      html += '<section class="card p-4"><h2 class="card-title">Your Bid</h2>';
+      html += '<p><strong>Price:</strong> AED ' + escapeHtml(details.myBid.bidPrice) + '</p>';
+      html += '<p><strong>Status:</strong> ' + statusLabel(details.myBid.status) + '</p>';
+      html += '<a href="/bids" class="btn btn-primary">Go to My Bids</a></section>';
+    } else {
+      html += '<section class="card p-4"><p class="mb-0">Bidding is closed for this request.</p></section>';
+    }
+    html += '<a href="/browse-requests" class="btn btn-primary btn-clear mt-3">Back to Requests</a>';
+  } else {
+    html += '<section class="card p-4"><h2 class="card-title">Bids</h2>';
+    if (details.bids.length === 0) {
+      html += '<p class="text-muted mb-0">No bids yet.</p>';
+    }
+    for (let i = 0; i < details.bids.length; i++) {
+      const bid = details.bids[i].bid;
+      html += '<div class="card p-3 mb-2">';
+      html += '<p class="mb-1"><strong>' + escapeHtml(details.bids[i].carer.username) + '</strong> - AED ' + escapeHtml(bid.bidPrice) + ' (' + statusLabel(bid.status) + ')</p>';
+      html += '<p class="text-muted mb-0">' + escapeHtml(bid.bidDescription) + '</p></div>';
+    }
+    html += '</section>';
+    html += '<a href="/owner-requests" class="btn btn-primary btn-clear mt-3">Back to My Requests</a>';
+  }
+  html += '</div></div>';
+
+  html += pageEnd();
+  return html;
+}
+
+/*
+  bidsPage(user, items)
+  "My Bids": a card per bid. If the bid can still change (item.canChange), it has an
+  edit form (POST /bids/:id/edit) and a withdraw form (POST /bids/:id/withdraw).
+  required / min / minlength = simple client-side checks done by the browser itself.
+*/
+function bidsPage(user, items) {
+  let html = pageStart('My Bids', 'My Bids', 'Review bids you have submitted.', user);
+
+  html += '<div class="row g-4">';
+  if (items.length === 0) {
+    html += '<p class="text-muted text-center">You have not placed any bids yet. <a href="/browse-requests">Browse requests</a></p>';
+  }
+  for (let i = 0; i < items.length; i++) {
+    const bid = items[i].bid;
+    const request = items[i].request;
+    html += '<div class="col-12 col-lg-6 provider-bid-card"><section class="card p-4 h-100">';
+    html += '<h2 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(items[i].pet.petName) + '</h2>';
+    html += '<p><strong>Status:</strong> <span class="bid-status">' + statusLabel(bid.status) + '</span></p>';
+    html += '<p><strong>Deadline:</strong> ' + formatDate(request.deadline) + '</p>';
+
+    if (items[i].canChange) {
+      html += '<form class="bid-edit-form" action="/bids/' + bid.id + '/edit" method="POST">';
+      html += '<div class="mb-3"><label class="form-label">Your price (AED):</label>';
+      html += '<input type="number" class="form-control bid-price" name="bidPrice" min="0.01" step="0.01" required value="' + escapeHtml(bid.bidPrice) + '" /></div>';
+      html += '<div class="mb-3"><label class="form-label">Service description:</label>';
+      html += '<textarea class="form-control bid-description" name="bidDescription" rows="3" minlength="10" required>' + escapeHtml(bid.bidDescription) + '</textarea></div>';
+      html += '<button type="submit" class="btn btn-primary mt-0">Save Edit</button>';
+      html += '</form>';
+      html += '<form action="/bids/' + bid.id + '/withdraw" method="POST">';
+      html += '<button type="submit" class="btn btn-outline-danger mt-2 withdraw-bid">Withdraw Bid</button>';
+      html += '</form>';
+    } else {
+      html += '<p><strong>Your price:</strong> AED ' + escapeHtml(bid.bidPrice) + '</p>';
+      html += '<p class="text-muted">' + escapeHtml(bid.bidDescription) + '</p>';
+    }
+    html += '<a href="/requests/' + request.id + '" class="btn btn-primary btn-clear align-self-start mt-2">View Request</a>';
+    html += '</section></div>';
+  }
+  html += '</div>';
+
+  html += pageEnd();
+  return html;
+}
+
+
+/* ---- (more pages are added below: reviews, dashboards) ---- */
 
 
 // module.exports: lets server.js use these functions with require('./pages').
@@ -382,5 +594,8 @@ module.exports = {
   errorPage: errorPage,
   petsPage: petsPage,
   createRequestPage: createRequestPage,
-  ownerRequestsPage: ownerRequestsPage
+  ownerRequestsPage: ownerRequestsPage,
+  browsePage: browsePage,
+  requestDetailsPage: requestDetailsPage,
+  bidsPage: bidsPage
 };

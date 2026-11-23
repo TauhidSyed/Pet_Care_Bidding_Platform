@@ -336,16 +336,104 @@ app.post('/requests/:id/complete', ownerOnly, function (req, res) {
    6. PROVIDER ROUTES (logged in + userType "carer")
    ===================================================================== */
 // TODO(Umar): GET  /provider-dashboard        -> counts of my current tasks / active bids / completed
-// TODO(Umar): GET  /browse-requests           -> open requests as cards (keep data-pet-type, data-service, data-budget, data-search!)
-// TODO(Umar): POST /requests/:id/bids         -> submit bid (request must be open AND before deadline)
-// TODO(Umar): GET  /bids                      -> my bids
-// TODO(Umar): POST /bids/:id/edit             -> edit my bid (only mine, only pending, only before deadline)
-// TODO(Umar): POST /bids/:id/withdraw         -> withdraw my bid (same rules)
+// Every route here has `carerOnly` in front: not logged in -> login page, owner -> 403.
+
+/*
+  GET /browse-requests
+  IN:   req.query (all optional): search, petType, service, maxBudget
+        e.g. /browse-requests?search=calm&service=walking&maxBudget=150
+  DOES: logic.browseRequests returns the open, not-yet-expired requests that match.
+  OUT:  the Browse page with one card per request.
+*/
+app.get('/browse-requests', carerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.browseRequests(req.query);
+  res.send(pages.browsePage(user, result.items, req.query, logic.SERVICES, logic.PET_TYPES));
+});
+
+/*
+  POST /requests/:id/bids
+  IN:   req.params.id = request id, req.body: bidPrice, bidDescription
+  DOES: logic.placeBid: request must be open + before the deadline, valid price/description,
+        no second bid from the same provider.
+  OUT:  success -> /bids. Missing request -> 404. Closed/late/invalid -> 400.
+*/
+app.post('/requests/:id/bids', carerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const requestId = toId(req.params.id);
+  const result = logic.placeBid(requestId, user.id, req.body.bidPrice, req.body.bidDescription);
+  if (!result.ok) {
+    return sendError(res, result, '/requests/' + req.params.id, user);
+  }
+  res.redirect('/bids');
+});
+
+/*
+  GET /bids
+  OUT: the "My Bids" page with all of this provider's bids.
+*/
+app.get('/bids', carerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.getCarerBids(user.id);
+  res.send(pages.bidsPage(user, result.items));
+});
+
+/*
+  POST /bids/:id/edit
+  IN:   req.params.id = bid id, req.body: bidPrice, bidDescription
+  DOES: logic.editBid: only YOUR pending bid, only while the request is open and before the deadline.
+  OUT:  success -> /bids. Not found 404, not yours 403, too late / invalid 400.
+  (A plain HTML form can only send GET or POST, so we use POST instead of PUT.)
+*/
+app.post('/bids/:id/edit', carerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.editBid(user.id, toId(req.params.id), req.body.bidPrice, req.body.bidDescription);
+  if (!result.ok) {
+    return sendError(res, result, '/bids', user);
+  }
+  res.redirect('/bids');
+});
+
+/*
+  POST /bids/:id/withdraw
+  IN:   req.params.id = bid id
+  DOES: logic.withdrawBid: same rules as edit; the bid becomes "withdrawn".
+  OUT:  success -> /bids, otherwise 404 / 403 / 400.
+  (POST instead of DELETE for the same reason as above.)
+*/
+app.post('/bids/:id/withdraw', carerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.withdrawBid(user.id, toId(req.params.id));
+  if (!result.ok) {
+    return sendError(res, result, '/bids', user);
+  }
+  res.redirect('/bids');
+});
 
 /* =====================================================================
    7. SHARED ROUTES (logged in, either role)
    ===================================================================== */
-// TODO(Umar): GET  /requests/:id              -> request details page (bid form only shown to carers)
+// These need `authentication` (logged in, either role). logic.js decides what each role may see.
+
+/*
+  GET /requests/:id
+  IN:   req.params.id = request id
+  DOES: logic.getRequestDetails: 404 if missing; owners can only open their own (403).
+  OUT:  the details page. Providers get the bid form (if bidding is still allowed),
+        owners get the list of bids.
+*/
+app.get('/requests/:id', authentication, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.getRequestDetails(user, toId(req.params.id));
+  if (!result.ok) {
+    let backUrl = '/owner-requests';
+    if (user.userType === 'carer') {
+      backUrl = '/browse-requests';
+    }
+    return sendError(res, result, backUrl, user);
+  }
+  res.send(pages.requestDetailsPage(user, result));
+});
 // TODO(Umar): GET  /reviews                   -> reviews about me + form listing my completed requests
 // TODO(Umar): POST /reviews                   -> validate rating 1-5, request must be completed and involve me
 
