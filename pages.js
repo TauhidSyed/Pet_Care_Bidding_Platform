@@ -285,8 +285,9 @@ function createRequestPage(user, pets, services) {
 /*
   ownerRequestCard(item)
   One request card on the "My Requests" page. What it shows depends on the status:
-    open      -> the bids + "Select Provider" form + "Close Request" button
-    closed    -> the chosen provider + "Mark as Completed" button (if a winner exists)
+    open      -> the bids + "Select Provider" form
+    closed    -> the chosen provider + "Mark as Completed" button
+                 (a request only becomes "closed" when the owner picks a winner)
     completed -> the provider + "Leave a Review" link
   item = { request, pet, bids: [{ bid, carer }] }  (from logic.getOwnerRequests)
 */
@@ -333,19 +334,11 @@ function ownerRequestCard(item) {
     html += '<option value="">Choose a bid</option>' + optionsHtml(activeIds, activeLabels, '') + '</select>';
     html += '<button type="submit" class="btn btn-primary mt-2">Select Provider</button>';
     html += '</form>';
-    // Closing is a separate form, so it doesn't need a bid to be chosen.
-    html += '<form action="/requests/' + request.id + '/close" method="POST">';
-    html += '<button type="submit" class="btn btn-outline-danger mt-2">Close Request</button>';
-    html += '</form>';
   } else if (request.status === 'closed') {
-    if (winnerName !== '') {
-      html += '<p><strong>Provider:</strong> ' + escapeHtml(winnerName) + '</p>';
-      html += '<form action="/requests/' + request.id + '/complete" method="POST">';
-      html += '<button type="submit" class="btn btn-primary mt-0">Mark as Completed</button>';
-      html += '</form>';
-    } else {
-      html += '<p class="text-muted">Closed without choosing a provider.</p>';
-    }
+    html += '<p><strong>Provider:</strong> ' + escapeHtml(winnerName) + '</p>';
+    html += '<form action="/requests/' + request.id + '/complete" method="POST">';
+    html += '<button type="submit" class="btn btn-primary mt-0">Mark as Completed</button>';
+    html += '</form>';
   } else if (request.status === 'completed') {
     html += '<p><strong>Provider:</strong> ' + escapeHtml(winnerName) + '</p>';
     html += '<a href="/reviews" class="btn btn-primary align-self-start">Leave a Review</a>';

@@ -34,7 +34,6 @@
 | Add pet | `/pets` | POST | owner | done |
 | Create request | `/requests` | POST | owner | done |
 | Select winning bid | `/requests/:id/select-bid` | POST | owner (own request) | done |
-| Close request | `/requests/:id/close` | POST | owner (own request) | done |
 | Mark request completed | `/requests/:id/complete` | POST | owner (own request) | done |
 | Submit bid | `/requests/:id/bids` | POST | provider | done |
 | Edit bid | `/bids/:id/edit` | POST | provider (own bid) | done |
@@ -59,7 +58,8 @@ Why POST for edit/withdraw instead of PUT/DELETE: a plain HTML `<form>` can only
 
 ## Status rules
 
-- Request: `open` → `closed` (winner picked, or owner closed it) → `completed` (only if there is a winner).
+- Request: `open` → `closed` (the owner picked a winner; this is the only way to close a request) → `completed`.
+- An open request whose deadline has passed takes no more bids and disappears from Browse, but the owner can still pick a winner from the bids it got.
 - Bid: `active` → `accepted` / `rejected` (when the owner picks) or `withdrawn` (by the provider).
 - The winner of a request is its `accepted` bid (there is no separate winner column).
 - Bids can be placed, edited or withdrawn only while the request is `open` **and** before its `bidding_deadline`.

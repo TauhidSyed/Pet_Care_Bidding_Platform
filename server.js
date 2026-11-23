@@ -315,21 +315,6 @@ app.post('/requests/:id/select-bid', ownerOnly, async (req, res) => {
 });
 
 /*
-  POST /requests/:id/close
-  IN:   req.params.id
-  DOES: logic.closeRequest: closes an open request without a winner (no more bids).
-  OUT:  success -> /owner-requests, otherwise 404 / 403 / 400.
-*/
-app.post('/requests/:id/close', ownerOnly, async (req, res) => {
-  const user = await getCurrentUser(req);
-  const result = await logic.closeRequest(user.id, toId(req.params.id));
-  if (!result.ok) {
-    return sendError(res, result, '/owner-requests', user);
-  }
-  res.redirect('/owner-requests');
-});
-
-/*
   POST /requests/:id/complete
   IN:   req.params.id
   DOES: logic.completeRequest: closed request with a winner -> "completed" (reviews unlock).
