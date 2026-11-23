@@ -5,7 +5,8 @@
   This file only does the "web" part. Each route:
     1. reads what the browser sent (req.body / req.params / req.query),
     2. calls a function from logic.js (where all the rules live),
-    3. sends the answer: a redirect or an HTML page (built in pages.js) on success,
+    3. sends the answer: a redirect or a teammate's HTML page filled with real data
+       (the pieces are built in pages.js) on success,
        or an error page with the right status code (400 / 401 / 403 / 404).
   The logic.js functions talk to the MySQL database, so they are `async`. That's why every
   route is written  async (req, res) => { ... await logic.something(...) ... }:
@@ -64,6 +65,101 @@ function sendError(res, result, backUrl, user) {
 */
 function toId(text) {
   return parseInt(text);
+}
+
+/* ---------------------------------------------------------------------
+   USING OUR TEAMMATES' HTML FILES AS THE PAGES
+   The real pages are the teammates' files in private/ (and public/browse-requests.html).
+   They contain placeholder comments around the parts that need real data, e.g.
+       <div class="stat-number"><!-- PET_COUNT -->1<!-- /PET_COUNT --></div>
+   For each page we: 1) read the file, 2) swap each placeholder's content for real data
+   (built in pages.js), 3) send the result with res.send(...). Everything else in their
+   file stays exactly as they wrote it.
+   --------------------------------------------------------------------- */
+
+/*
+  EXCEPTION (not in the lectures): fs.readFileSync
+  `fs` ("file system") is built into Node.js, so nothing extra is installed.
+  fs.readFileSync(filePath, 'utf8') opens a file on the server's disk and gives back its
+  whole content as one string ('utf8' = read it as normal text, not raw bytes).
+  "Sync" = wait until the file is read before carrying on (the files are small, so that's quick).
+  Why we need it: res.sendFile can only send a file exactly as it is; we must change parts
+  of it first, so we have to read it into a string ourselves.
+  We read the file on every request, so a teammate can change their HTML and just refresh.
+*/
+const fs = require('fs');
+
+// readTeamPage('private', 'pets.html') -> the content of private/pets.html as a string
+function readTeamPage(folder, fileName) {
+  return fs.readFileSync(path.join(__dirname, folder, fileName), 'utf8');
+}
+
+/*
+  findText(text, target, startAt)
+  Where `target` first appears in `text`, looking from position startAt onwards,
+  or -1 if it isn't there. Checked one character at a time (same idea as beginsWith in logic.js).
+*/
+function findText(text, target, startAt) {
+  for (let i = startAt; i <= text.length - target.length; i++) {
+    let match = true;
+    for (let j = 0; j < target.length; j++) {
+      if (text[i + j] !== target[j]) {
+        match = false;
+        break;
+      }
+    }
+    if (match) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// copyPart(text, from, to): the characters of `text` from position `from` up to (not including) `to`.
+function copyPart(text, from, to) {
+  let part = '';
+  for (let i = from; i < to; i++) {
+    part = part + text[i];
+  }
+  return part;
+}
+
+/*
+  fillSlot(html, name, content)
+  Replaces everything between <!-- NAME --> and <!-- /NAME --> with `content`.
+  The two marker comments stay (the browser ignores comments), so the teammates can
+  still see where the data goes. If a marker is missing we log it and leave the page as it is.
+*/
+function fillSlot(html, name, content) {
+  const startMarker = '<!-- ' + name + ' -->';
+  const endMarker = '<!-- /' + name + ' -->';
+  const start = findText(html, startMarker, 0);
+  if (start === -1) {
+    console.log('Placeholder missing: ' + startMarker);
+    return html;
+  }
+  const end = findText(html, endMarker, start);
+  if (end === -1) {
+    console.log('Placeholder missing: ' + endMarker);
+    return html;
+  }
+  return copyPart(html, 0, start + startMarker.length) + content + copyPart(html, end, html.length);
+}
+
+/*
+  fillValue(html, name, value)
+  For a single marker like <!-- REQUEST_ID --> (used inside the bid form's action="..."):
+  replaces EVERY copy of the marker with `value`.
+*/
+function fillValue(html, name, value) {
+  const marker = '<!-- ' + name + ' -->';
+  let result = html;
+  let position = findText(result, marker, 0);
+  while (position !== -1) {
+    result = copyPart(result, 0, position) + value + copyPart(result, position + marker.length, result.length);
+    position = findText(result, marker, position + String(value).length);
+  }
+  return result;
 }
 
 /* =====================================================================
@@ -199,6 +295,60 @@ app.get('/logout', function (req, res) {
   });
 });
 
+/*
+  GET /logged-out.html
+  The teammates' pages have "Log Out" links straight to logged-out.html (and their
+  #logout-btn may go there too). So visiting this page ALSO ends the session first,
+  then sends their page with res.sendFile. That way every "Log Out" really logs you out.
+*/
+app.get('/logged-out.html', function (req, res) {
+  req.session.destroy(function () {
+    res.sendFile(path.join(__dirname, 'public', 'logged-out.html'));
+  });
+});
+
+/*
+  THE TEAMMATES' OLD LINKS
+  Their pages link to each other by file name (href="bids.html", "owner-dashboard.html"...).
+  Instead of changing their links, these small routes send each old name to the real route.
+  They must come BEFORE express.static below, because public/browse-requests.html is a
+  real file there, and we want the version filled with data, not the raw file.
+*/
+const OLD_PAGE_NAMES = ['/pets.html', '/create-request.html', '/owner-requests.html', '/bids.html', '/reviews.html'];
+const NEW_PAGE_URLS = ['/pets', '/create-request', '/owner-requests', '/bids', '/reviews'];
+for (let i = 0; i < OLD_PAGE_NAMES.length; i++) {
+  app.get(OLD_PAGE_NAMES[i], function (req, res) {
+    res.redirect(NEW_PAGE_URLS[i]);
+  });
+}
+
+// "Back to Dashboard" / "Back to Requests" links: send people to THEIR OWN page for their role,
+// so a provider clicking "owner-dashboard.html" on the request details page isn't blocked (403).
+app.get(['/owner-dashboard.html', '/provider-dashboard.html'], async (req, res) => {
+  const user = await getCurrentUser(req);
+  if (user === null) {
+    return res.redirect('/login.html');
+  }
+  if (user.role === 'owner') {
+    return res.redirect('/owner-dashboard');
+  }
+  res.redirect('/provider-dashboard');
+});
+app.get('/browse-requests.html', async (req, res) => {
+  const user = await getCurrentUser(req);
+  if (user !== null && user.role === 'owner') {
+    return res.redirect('/owner-requests');
+  }
+  res.redirect('/browse-requests');
+});
+// Their original plan was request-details.html?id=3, so we support that too.
+app.get('/request-details.html', function (req, res) {
+  if (req.query.id) {
+    return res.redirect('/requests/' + toId(req.query.id));
+  }
+  res.redirect('/browse-requests.html');
+});
+
 /*----- Sending Files -----*/
 app.use(express.static(path.join(__dirname, 'public')));
 /*
@@ -232,22 +382,31 @@ app.use(express.static(path.join(__dirname, 'public')));
    ===================================================================== */
 /*
   GET /owner-dashboard
-  OUT: the owner dashboard: counts + lists of my pets, open, active and completed requests.
+  PAGE: private/owner-dashboard.html
+  FILLS: PET_COUNT, OPEN_COUNT, COMPLETED_COUNT (the three numbers at the top)
 */
 app.get('/owner-dashboard', ownerOnly, async (req, res) => {
   const user = await getCurrentUser(req);
-  res.send(pages.ownerDashboardPage(user, await logic.getOwnerDashboard(user.id)));
+  const dash = await logic.getOwnerDashboard(user.id);
+  let html = readTeamPage('private', 'owner-dashboard.html');
+  html = fillSlot(html, 'PET_COUNT', dash.pets.length);
+  html = fillSlot(html, 'OPEN_COUNT', dash.openRequests.length);
+  html = fillSlot(html, 'COMPLETED_COUNT', dash.completedRequests.length);
+  res.send(html);
 });
 // Every route here has `ownerOnly` in front: not logged in -> login page, provider -> 403.
 // The owner's id always comes from the SESSION, never from the form, so nobody can act as someone else.
 
 /*
   GET /pets
-  OUT: the "My Pets" page: the logged-in owner's pets + the add-pet form.
+  PAGE: private/pets.html (their add-pet form posts to POST /pets)
+  FILLS: PET_CARDS (a card for each of the logged-in owner's pets)
 */
 app.get('/pets', ownerOnly, async (req, res) => {
   const user = await getCurrentUser(req);
-  res.send(pages.petsPage(user, await logic.getPetsForOwner(user.id)));
+  let html = readTeamPage('private', 'pets.html');
+  html = fillSlot(html, 'PET_CARDS', pages.petCards(await logic.getPetsForOwner(user.id)));
+  res.send(html);
 });
 
 /*
@@ -267,11 +426,14 @@ app.post('/pets', ownerOnly, async (req, res) => {
 
 /*
   GET /create-request
-  OUT: the create-request form, with a dropdown of THIS owner's pets.
+  PAGE: private/create-request.html (their form posts to POST /requests)
+  FILLS: PET_OPTIONS (the "Your pet" dropdown, built from THIS owner's pets)
 */
 app.get('/create-request', ownerOnly, async (req, res) => {
   const user = await getCurrentUser(req);
-  res.send(pages.createRequestPage(user, await logic.getPetsForOwner(user.id), logic.SERVICES));
+  let html = readTeamPage('private', 'create-request.html');
+  html = fillSlot(html, 'PET_OPTIONS', pages.petOptions(await logic.getPetsForOwner(user.id)));
+  res.send(html);
 });
 
 /*
@@ -291,12 +453,18 @@ app.post('/requests', ownerOnly, async (req, res) => {
 
 /*
   GET /owner-requests
-  OUT: the owner's requests grouped by status, each with its bids and action buttons.
+  PAGE: private/owner-requests.html
+  FILLS: OPEN_REQUESTS      (open requests + closed ones waiting to be marked completed)
+         COMPLETED_REQUESTS (completed requests)
+  Each card has its bids and the right buttons (select winner / mark completed / review).
 */
 app.get('/owner-requests', ownerOnly, async (req, res) => {
   const user = await getCurrentUser(req);
   const result = await logic.getOwnerRequests(user.id);
-  res.send(pages.ownerRequestsPage(user, result.items));
+  let html = readTeamPage('private', 'owner-requests.html');
+  html = fillSlot(html, 'OPEN_REQUESTS', pages.ownerRequestCards(result.items, ['open', 'closed'], 'No open requests.'));
+  html = fillSlot(html, 'COMPLETED_REQUESTS', pages.ownerRequestCards(result.items, ['completed'], 'No completed requests yet.'));
+  res.send(html);
 });
 
 /*
@@ -334,11 +502,17 @@ app.post('/requests/:id/complete', ownerOnly, async (req, res) => {
    ===================================================================== */
 /*
   GET /provider-dashboard
-  OUT: the provider dashboard: counts + lists of current tasks, active bids, completed jobs.
+  PAGE: private/provider-dashboard.html
+  FILLS: TASK_COUNT, ACTIVE_BID_COUNT, COMPLETED_COUNT (the three numbers at the top)
 */
 app.get('/provider-dashboard', carerOnly, async (req, res) => {
   const user = await getCurrentUser(req);
-  res.send(pages.providerDashboardPage(user, await logic.getProviderDashboard(user.id)));
+  const dash = await logic.getProviderDashboard(user.id);
+  let html = readTeamPage('private', 'provider-dashboard.html');
+  html = fillSlot(html, 'TASK_COUNT', dash.currentTasks.length);
+  html = fillSlot(html, 'ACTIVE_BID_COUNT', dash.activeBids.length);
+  html = fillSlot(html, 'COMPLETED_COUNT', dash.completedTasks.length);
+  res.send(html);
 });
 // Every route here has `carerOnly` in front: not logged in -> login page, owner -> 403.
 
@@ -347,12 +521,14 @@ app.get('/provider-dashboard', carerOnly, async (req, res) => {
   IN:   req.query (all optional): search, petType, service, maxBudget
         e.g. /browse-requests?search=calm&service=walking&maxBudget=150
   DOES: logic.browseRequests returns the open, not-yet-expired requests that match.
-  OUT:  the Browse page with one card per request.
+  PAGE: public/browse-requests.html (their search box and filters work live through script.js)
+  FILLS: REQUEST_CARDS (one card per open request, with the data-* attributes script.js filters on)
 */
 app.get('/browse-requests', carerOnly, async (req, res) => {
-  const user = await getCurrentUser(req);
   const result = await logic.browseRequests(req.query);
-  res.send(pages.browsePage(user, result.items, req.query, logic.SERVICES, logic.PET_TYPES));
+  let html = readTeamPage('public', 'browse-requests.html');
+  html = fillSlot(html, 'REQUEST_CARDS', pages.browseCards(result.items));
+  res.send(html);
 });
 
 /*
@@ -374,12 +550,15 @@ app.post('/requests/:id/bids', carerOnly, async (req, res) => {
 
 /*
   GET /bids
-  OUT: the "My Bids" page with all of this provider's bids.
+  PAGE: private/bids.html
+  FILLS: BID_CARDS (one card per bid; active ones get the Save Edit / Withdraw Bid form)
 */
 app.get('/bids', carerOnly, async (req, res) => {
   const user = await getCurrentUser(req);
   const result = await logic.getCarerBids(user.id);
-  res.send(pages.bidsPage(user, result.items));
+  let html = readTeamPage('private', 'bids.html');
+  html = fillSlot(html, 'BID_CARDS', pages.bidCards(result.items));
+  res.send(html);
 });
 
 /*
@@ -423,8 +602,12 @@ app.post('/bids/:id/withdraw', carerOnly, async (req, res) => {
   GET /requests/:id
   IN:   req.params.id = request id
   DOES: logic.getRequestDetails: 404 if missing; owners can only open their own (403).
-  OUT:  the details page. Providers get the bid form (if bidding is still allowed),
-        owners get the list of bids.
+  PAGE: private/request-details.html
+  FILLS: REQUEST_PET ... REQUEST_INSTRUCTIONS (the 7 details), and BID_FORM:
+         - a provider who may bid keeps THEIR bid form; we only put the request id into its
+           action="/requests/<!-- REQUEST_ID -->/bids"
+         - everyone else gets pages.bidAreaMessage (owner: the bids; provider: their bid / "closed")
+  Every value a user typed (pet name, instructions) goes through escapeHtml.
 */
 app.get('/requests/:id', authentication, async (req, res) => {
   const user = await getCurrentUser(req);
@@ -436,16 +619,36 @@ app.get('/requests/:id', authentication, async (req, res) => {
     }
     return sendError(res, result, backUrl, user);
   }
-  res.send(pages.requestDetailsPage(user, result));
+  const request = result.request;
+  let html = readTeamPage('private', 'request-details.html');
+  html = fillSlot(html, 'REQUEST_PET', pages.escapeHtml(result.pet.name) + ' - ' + pages.escapeHtml(result.pet.pet_type));
+  html = fillSlot(html, 'REQUEST_SERVICE', pages.serviceLabel(request.service));
+  html = fillSlot(html, 'REQUEST_START', pages.formatDate(request.service_start));
+  html = fillSlot(html, 'REQUEST_END', pages.formatDate(request.service_end));
+  html = fillSlot(html, 'REQUEST_BUDGET', 'AED ' + pages.escapeHtml(request.budget));
+  html = fillSlot(html, 'REQUEST_DEADLINE', pages.formatDate(request.bidding_deadline));
+  html = fillSlot(html, 'REQUEST_INSTRUCTIONS', pages.escapeHtml(request.instructions));
+  if (user.role === 'carer' && result.canBid) {
+    html = fillValue(html, 'REQUEST_ID', request.id);
+  } else {
+    html = fillSlot(html, 'BID_FORM', pages.bidAreaMessage(user, result));
+  }
+  res.send(html);
 });
+
 /*
   GET /reviews
-  OUT: the Reviews page: reviews about me, reviews I wrote, and a form listing
-       my completed services that I haven't reviewed yet.
+  PAGE: private/reviews.html (their form posts to POST /reviews)
+  FILLS: REVIEW_LIST    (reviews about me, then reviews I wrote)
+         REVIEW_OPTIONS (my completed services that I haven't reviewed yet)
 */
 app.get('/reviews', authentication, async (req, res) => {
   const user = await getCurrentUser(req);
-  res.send(pages.reviewsPage(user, await logic.getReviewsPage(user.id)));
+  const info = await logic.getReviewsPage(user.id);
+  let html = readTeamPage('private', 'reviews.html');
+  html = fillSlot(html, 'REVIEW_LIST', pages.reviewCards(info));
+  html = fillSlot(html, 'REVIEW_OPTIONS', pages.reviewOptions(info));
+  res.send(html);
 });
 
 /*
@@ -465,8 +668,8 @@ app.post('/reviews', authentication, async (req, res) => {
 });
 
 // Umar: J's old plan was  app.use(authentication, express.static(path.join(__dirname, 'private')));
-// We don't need it any more: every private page is now built by a route above (with its own
-// login/role check), so the static files in private/ are never sent to the browser.
+// We don't need it: each private page has its own route above (with its own login/role check)
+// that reads the file and fills in the data, so private/ is never served as raw files.
 
 /* =====================================================================
    8. 404 (must stay LAST)
