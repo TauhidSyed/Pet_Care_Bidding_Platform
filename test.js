@@ -98,7 +98,6 @@ async function runTests() {
   expect('deadline in the past', await logic.createRequest(UMAR, { petId: '1', service: 'bathing', startTime: '2030-01-10T10:00', endTime: '2030-01-10T11:00', budget: '80', deadline: '2020-01-05T10:00' }), false, 400);
   expect('deadline after start', await logic.createRequest(UMAR, { petId: '1', service: 'bathing', startTime: '2030-01-10T10:00', endTime: '2030-01-10T11:00', budget: '80', deadline: '2030-01-11T10:00' }), false, 400);
   expect('unknown service', await logic.createRequest(UMAR, { petId: '1', service: 'flying', startTime: '2030-01-10T10:00', endTime: '2030-01-10T11:00', budget: '80', deadline: '2030-01-05T10:00' }), false, 400);
-  const newRequestId = created.request.id;
 
   console.log('\n=== Browse ===');
   let browse = await logic.browseRequests({});
@@ -138,7 +137,7 @@ async function runTests() {
   expect('bid again after withdrawing', rebid, true);
   expectTrue('re-bid reuses the same bid (one bid per provider per request)', rebid.ok && rebid.bid.id === 1);
 
-  console.log('\n=== Select winner / close / complete ===');
+  console.log('\n=== Select winner / complete ===');
   expect("select on someone else's request", await logic.selectWinningBid(UMAR, 4, 5), false, 403);
   expect('select a bid from another request', await logic.selectWinningBid(UMAR, 1, 3), false, 400);
   expect('select on missing request', await logic.selectWinningBid(UMAR, 999, 1), false, 404);
@@ -150,10 +149,7 @@ async function runTests() {
     (await logic.findRequestById(1)).status === 'closed');
   expect('bid on the now-closed request', await logic.placeBid(1, AISHA, '50', 'Trying after it closed'), false, 400);
   expect('select again', await logic.selectWinningBid(UMAR, 1, 1), false, 400);
-  expect('close a request without a winner', await logic.closeRequest(UMAR, newRequestId), true);
-  expect('complete a request closed without winner', await logic.completeRequest(UMAR, newRequestId), false, 400);
   expect('complete request with winner', await logic.completeRequest(UMAR, 1), true);
-  expect("close someone else's request", await logic.closeRequest(UMAR, 4), false, 403);
 
   console.log('\n=== Reviews ===');
   expect('owner reviews winning provider', await logic.addReview(UMAR, { requestId: '1', rating: '5', comment: 'Great walk' }), true);
@@ -175,8 +171,9 @@ async function runTests() {
 
   console.log('\n=== Dashboards ===');
   const ownerDash = await logic.getOwnerDashboard(UMAR);
-  expectTrue('owner dashboard: 3 pets, 0 open, 2 completed',
-    ownerDash.pets.length === 3 && ownerDash.openRequests.length === 0 && ownerDash.completedRequests.length === 2);
+  // 1 open = the request created in the "Create request" tests above (nobody picked a winner for it).
+  expectTrue('owner dashboard: 3 pets, 1 open, 2 completed',
+    ownerDash.pets.length === 3 && ownerDash.openRequests.length === 1 && ownerDash.completedRequests.length === 2);
   const samDash = await logic.getProviderDashboard(SAM);
   expectTrue('Sam: 1 current task (request 2), 1 completed (request 1)',
     samDash.currentTasks.length === 1 && samDash.completedTasks.length === 1);
