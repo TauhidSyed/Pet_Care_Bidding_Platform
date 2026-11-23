@@ -28,7 +28,7 @@
         -->
 
     <!-- T: Used same code format as login.html-->
-    <form id="register-form" novalidate>
+    <form id="register-form" novalidate action="/register" method="post">
       <div>
         <label>Which one are you?</label>
         <div class="register-radio-options">
@@ -65,7 +65,7 @@
       <div>
         <label for="password" class="">Password:</label>
         <input
-          type="text"
+          type="password"
           class=""
           id="password"
           placeholder="Please enter your password"
@@ -91,6 +91,8 @@
             <option value="walking">Pet walking</option>
             <option value="bathing">Pet bathing</option>
             <option value="grooming">Pet grooming</option>
+            <option value="feeding">Pet feeding</option>
+            <option value="sitting">Pet sitting</option>
           </select>
         </div>
 
