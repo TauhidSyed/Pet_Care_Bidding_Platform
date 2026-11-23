@@ -159,11 +159,228 @@ function errorPage(status, message, backUrl, user) {
 }
 
 
-/* ---- (more pages are added below: owner, provider, reviews, dashboards) ---- */
+/* =====================================================================
+   OWNER PAGES
+   ===================================================================== */
+
+/*
+  petsPage(user, pets)
+  "My Pets": a card per pet (photo + details) and the add-pet form.
+  The form keeps the ids from pets.html (#pet-form, #pet-name, ...) so script.js
+  still validates it, and posts to POST /pets.
+*/
+function petsPage(user, pets) {
+  let html = pageStart('My Pets', 'My Pets', 'Your pet profiles.', user);
+
+  html += '<div class="row g-4 mb-4">';
+  if (pets.length === 0) {
+    html += '<p class="text-muted text-center">You have not added any pets yet.</p>';
+  }
+  for (let i = 0; i < pets.length; i++) {
+    const pet = pets[i];
+    html += '<div class="col-12 col-md-6 col-lg-4"><section class="card p-4 h-100">';
+    html += '<img src="' + escapeHtml(pet.petPhoto) + '" alt="Photo of ' + escapeHtml(pet.petName) + '" class="img-fluid mb-3" />';
+    html += '<h2 class="card-title">' + escapeHtml(pet.petName) + '</h2>';
+    html += '<p class="mb-1"><strong>Type:</strong> ' + escapeHtml(pet.petType) + '</p>';
+    html += '<p class="mb-1"><strong>Breed:</strong> ' + escapeHtml(pet.petBreed) + '</p>';
+    html += '<p class="mb-0"><strong>Age:</strong> ' + escapeHtml(pet.petAge) + '</p>';
+    html += '</section></div>';
+  }
+  html += '</div>';
+
+  // Add-pet form: method="POST" + action="/pets" makes the browser send it to our route.
+  html += '<h2 class="text-center">Add a Pet</h2>';
+  html += '<form id="pet-form" action="/pets" method="POST" novalidate>';
+  html += '<label for="pet-name">Pet name:</label><input type="text" id="pet-name" name="petName" />';
+  html += '<label for="pet-type">Type of pet:</label><select id="pet-type" name="petType">';
+  html += '<option value="">Choose a type</option>' + optionsHtml(['cat', 'dog', 'other'], ['Cat', 'Dog', 'Other'], '');
+  html += '</select>';
+  html += '<label for="pet-breed">Breed:</label><input type="text" id="pet-breed" name="petBreed" />';
+  html += '<label for="pet-age">Age:</label><input type="number" id="pet-age" name="petAge" />';
+  html += '<label for="pet-photo">Photo URL:</label><input type="url" id="pet-photo" name="petPhoto" />';
+  html += '<p id="pet-message" style="color: red"></p>';
+  html += '<button type="submit" class="btn btn-primary">Add Pet</button>';
+  html += '</form>';
+
+  html += pageEnd();
+  return html;
+}
+
+/*
+  createRequestPage(user, pets, services)
+  The "Create a Care Request" form, with the pet dropdown built from THIS owner's pets
+  (the old page had hard-coded pets). Posts to POST /requests.
+  Same ids as create-request.html so script.js validates it.
+  NEW field: "tags" (keywords for our tag-search extra feature).
+*/
+function createRequestPage(user, pets, services) {
+  let html = pageStart('Create Request', 'Creating a Care Request', '', user);
+
+  if (pets.length === 0) {
+    html += '<section class="card p-4 text-center"><p>You need to add a pet before you can create a request.</p>';
+    html += '<div><a href="/pets" class="btn btn-primary">Add a Pet</a></div></section>';
+    html += pageEnd();
+    return html;
+  }
+
+  // Build the pet options: value = pet id, text = "Cloud - cat"
+  const petIds = [];
+  const petLabels = [];
+  for (let i = 0; i < pets.length; i++) {
+    petIds.push(String(pets[i].id));
+    petLabels.push(pets[i].petName + ' - ' + pets[i].petType);
+  }
+  const serviceLabels = [];
+  for (let i = 0; i < services.length; i++) {
+    serviceLabels.push(serviceLabel(services[i]));
+  }
+
+  html += '<form id="create-request-form" action="/requests" method="POST" novalidate>';
+  html += '<div class="row">';
+  html += '<div class="col-12 col-md-6"><label for="pet">Your pet:</label><select id="pet" name="petId" required>';
+  html += '<option value="">Choose a pet</option>' + optionsHtml(petIds, petLabels, '') + '</select></div>';
+  html += '<div class="col-12 col-md-6"><label for="service">Required Service:</label><select id="service" name="service" required>';
+  html += '<option value="">Choose a service</option>' + optionsHtml(services, serviceLabels, '') + '</select></div>';
+  html += '</div>';
+
+  html += '<div class="row">';
+  html += '<div class="col-12 col-md-6"><label for="start-time">Service starts at:</label><input type="datetime-local" id="start-time" name="startTime" required /></div>';
+  html += '<div class="col-12 col-md-6"><label for="end-time">Service ends at:</label><input type="datetime-local" id="end-time" name="endTime" required /></div>';
+  html += '</div>';
+
+  html += '<div class="row">';
+  html += '<div class="col-12 col-md-6"><label for="budget">Total budget (AED):</label><input type="number" id="budget" name="budget" required /></div>';
+  html += '<div class="col-12 col-md-6"><label for="deadline">Bidding Deadline:</label><input type="datetime-local" id="deadline" name="deadline" required /></div>';
+  html += '</div>';
+
+  html += '<div class="row"><div class="col-12">';
+  html += '<label for="additional-instructions">Additional care instructions (optional):</label>';
+  html += '<textarea id="additional-instructions" name="instructions"></textarea>';
+  html += '</div></div>';
+
+  html += '<div class="row"><div class="col-12">';
+  html += '<label for="request-tags">Search tags (optional, separated by spaces):</label>';
+  html += '<input type="text" id="request-tags" name="tags" placeholder="e.g. calm indoor sharjah" />';
+  html += '</div></div>';
+
+  html += '<p id="request-message" style="color: red"></p>';
+  html += '<div class="row"><div class="col-12"><button type="submit" class="btn btn-primary">Create Request</button></div></div>';
+  html += '</form>';
+
+  html += pageEnd();
+  return html;
+}
+
+/*
+  ownerRequestCard(item)
+  One request card on the "My Requests" page. What it shows depends on the status:
+    open      -> the bids + "Select Provider" form + "Close Request" button
+    closed    -> the chosen provider + "Mark as Completed" button (if a winner exists)
+    completed -> the provider + "Leave a Review" link
+  item = { request, pet, bids: [{ bid, carer }] }  (from logic.getOwnerRequests)
+*/
+function ownerRequestCard(item) {
+  const request = item.request;
+  let html = '<section class="card p-4 mb-4">';
+  html += '<h3 class="card-title">' + serviceLabel(request.service) + ' for ' + escapeHtml(item.pet.petName) + '</h3>';
+  html += '<p><strong>Status:</strong> ' + statusLabel(request.status) + '</p>';
+  html += '<p><strong>Service:</strong> ' + formatDate(request.startTime) + ' to ' + formatDate(request.endTime) + '</p>';
+  html += '<p><strong>Budget:</strong> AED ' + escapeHtml(request.budget) + '</p>';
+  html += '<p><strong>Bidding deadline:</strong> ' + formatDate(request.deadline) + '</p>';
+
+  // List the bids, and remember the pending ones for the dropdown.
+  html += '<h4 class="h5 mt-3">Submitted Bids</h4>';
+  const pendingIds = [];
+  const pendingLabels = [];
+  let winnerName = '';
+  if (item.bids.length === 0) {
+    html += '<p class="text-muted">No bids yet.</p>';
+  }
+  for (let i = 0; i < item.bids.length; i++) {
+    const bid = item.bids[i].bid;
+    const carer = item.bids[i].carer;
+    html += '<div class="card p-3 mb-3">';
+    html += '<p class="mb-1"><strong>' + escapeHtml(carer.username) + '</strong> (' + statusLabel(bid.status) + ')</p>';
+    html += '<p class="mb-1">AED ' + escapeHtml(bid.bidPrice) + '</p>';
+    html += '<p class="text-muted mb-0">' + escapeHtml(bid.bidDescription) + '</p>';
+    html += '</div>';
+    if (bid.status === 'pending') {
+      pendingIds.push(String(bid.id));
+      pendingLabels.push(carer.username + ' - AED ' + bid.bidPrice);
+    }
+    if (bid.id === request.winningBidId) {
+      winnerName = carer.username;
+    }
+  }
+
+  if (request.status === 'open') {
+    // Pick a winner. "required" = the browser won't send an empty choice (client-side check).
+    html += '<form action="/requests/' + request.id + '/select-bid" method="POST">';
+    html += '<label class="form-label" for="winning-bid-' + request.id + '">Choose a provider:</label>';
+    html += '<select class="form-select" id="winning-bid-' + request.id + '" name="winningBidId" required>';
+    html += '<option value="">Choose a bid</option>' + optionsHtml(pendingIds, pendingLabels, '') + '</select>';
+    html += '<button type="submit" class="btn btn-primary mt-2">Select Provider</button>';
+    html += '</form>';
+    // Closing is a separate form, so it doesn't need a bid to be chosen.
+    html += '<form action="/requests/' + request.id + '/close" method="POST">';
+    html += '<button type="submit" class="btn btn-outline-danger mt-2">Close Request</button>';
+    html += '</form>';
+  } else if (request.status === 'closed') {
+    if (winnerName !== '') {
+      html += '<p><strong>Provider:</strong> ' + escapeHtml(winnerName) + '</p>';
+      html += '<form action="/requests/' + request.id + '/complete" method="POST">';
+      html += '<button type="submit" class="btn btn-primary mt-0">Mark as Completed</button>';
+      html += '</form>';
+    } else {
+      html += '<p class="text-muted">Closed without choosing a provider.</p>';
+    }
+  } else if (request.status === 'completed') {
+    html += '<p><strong>Provider:</strong> ' + escapeHtml(winnerName) + '</p>';
+    html += '<a href="/reviews" class="btn btn-primary align-self-start">Leave a Review</a>';
+  }
+  html += '<a href="/requests/' + request.id + '" class="btn btn-primary btn-clear align-self-start mt-2">View Details</a>';
+  html += '</section>';
+  return html;
+}
+
+/*
+  ownerRequestsPage(user, items)
+  "Your Requests": the owner's requests in three groups (open / closed / completed),
+  each built with ownerRequestCard.
+*/
+function ownerRequestsPage(user, items) {
+  let html = pageStart('Your Requests', 'Your Requests', 'Review provider bids and completed services.', user);
+  html += '<div class="text-center mb-4"><a href="/create-request" class="btn btn-primary">Create a New Request</a></div>';
+
+  const groups = ['open', 'closed', 'completed'];
+  const groupTitles = ['Open Requests', 'Closed Requests (provider chosen)', 'Completed Requests'];
+  for (let g = 0; g < groups.length; g++) {
+    html += '<h2 class="mb-3">' + groupTitles[g] + '</h2>';
+    let count = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].request.status === groups[g]) {
+        html += ownerRequestCard(items[i]);
+        count++;
+      }
+    }
+    if (count === 0) {
+      html += '<p class="text-muted">None.</p>';
+    }
+  }
+
+  html += pageEnd();
+  return html;
+}
+
+
+/* ---- (more pages are added below: provider, reviews, dashboards) ---- */
 
 
 // module.exports: lets server.js use these functions with require('./pages').
 module.exports = {
   escapeHtml: escapeHtml,
-  errorPage: errorPage
+  errorPage: errorPage,
+  petsPage: petsPage,
+  createRequestPage: createRequestPage,
+  ownerRequestsPage: ownerRequestsPage
 };

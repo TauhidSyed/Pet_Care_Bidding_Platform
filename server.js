@@ -226,14 +226,111 @@ app.use(express.static(path.join(__dirname, 'public')));
    5. OWNER ROUTES (logged in + userType "owner")
    ===================================================================== */
 // TODO(Umar): GET  /owner-dashboard           -> counts of my pets / open / completed requests
-// TODO(Umar): GET  /pets                      -> list my pets + the add-pet form
-// TODO(Umar): POST /pets                      -> validate + add a pet for the logged-in owner
-// TODO(Umar): GET  /create-request            -> form, with the pet dropdown built from MY pets
-// TODO(Umar): POST /requests                  -> validate (dates, budget, deadline in future) + add request, status "open"
-// TODO(Umar): GET  /owner-requests            -> my requests grouped by status, with their bids
-// TODO(Umar): POST /requests/:id/select-bid   -> pick winning bid (only my request, only if open) -> status "closed"
-// TODO(Umar): POST /requests/:id/close        -> close without a winner (only my request)
-// TODO(Umar): POST /requests/:id/complete     -> mark a closed request "completed" (no button for this yet, see ROUTES.md)
+// Every route here has `ownerOnly` in front: not logged in -> login page, provider -> 403.
+// The owner's id always comes from the SESSION, never from the form, so nobody can act as someone else.
+
+/*
+  GET /pets
+  OUT: the "My Pets" page: the logged-in owner's pets + the add-pet form.
+*/
+app.get('/pets', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  res.send(pages.petsPage(user, logic.getPetsForOwner(user.id)));
+});
+
+/*
+  POST /pets
+  IN:   req.body: petName, petType, petBreed, petAge, petPhoto
+  DOES: logic.addPet validates and saves the pet for THIS owner.
+  OUT:  success -> back to /pets (the new pet shows up). Problem -> 400 + error page.
+*/
+app.post('/pets', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.addPet(user.id, req.body);
+  if (!result.ok) {
+    return sendError(res, result, '/pets', user);
+  }
+  res.redirect('/pets');
+});
+
+/*
+  GET /create-request
+  OUT: the create-request form, with a dropdown of THIS owner's pets.
+*/
+app.get('/create-request', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  res.send(pages.createRequestPage(user, logic.getPetsForOwner(user.id), logic.SERVICES));
+});
+
+/*
+  POST /requests
+  IN:   req.body: petId, service, startTime, endTime, budget, deadline, instructions, tags
+  DOES: logic.createRequest checks the dates/budget/pet and saves it with status "open".
+  OUT:  success -> /owner-requests. Problem -> 400 + error page.
+*/
+app.post('/requests', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.createRequest(user.id, req.body);
+  if (!result.ok) {
+    return sendError(res, result, '/create-request', user);
+  }
+  res.redirect('/owner-requests');
+});
+
+/*
+  GET /owner-requests
+  OUT: the owner's requests grouped by status, each with its bids and action buttons.
+*/
+app.get('/owner-requests', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.getOwnerRequests(user.id);
+  res.send(pages.ownerRequestsPage(user, result.items));
+});
+
+/*
+  POST /requests/:id/select-bid
+  IN:   req.params.id = the request id (from the URL), req.body.winningBidId = the chosen bid
+  DOES: logic.selectWinningBid: chosen bid accepted, others rejected, request closed.
+  OUT:  success -> /owner-requests. Not found -> 404, not your request -> 403, not allowed now -> 400.
+*/
+app.post('/requests/:id/select-bid', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.selectWinningBid(user.id, toId(req.params.id), toId(req.body.winningBidId));
+  if (!result.ok) {
+    return sendError(res, result, '/owner-requests', user);
+  }
+  res.redirect('/owner-requests');
+});
+
+/*
+  POST /requests/:id/close
+  IN:   req.params.id
+  DOES: logic.closeRequest: closes an open request without a winner (no more bids).
+  OUT:  success -> /owner-requests, otherwise 404 / 403 / 400.
+*/
+app.post('/requests/:id/close', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.closeRequest(user.id, toId(req.params.id));
+  if (!result.ok) {
+    return sendError(res, result, '/owner-requests', user);
+  }
+  res.redirect('/owner-requests');
+});
+
+/*
+  POST /requests/:id/complete
+  IN:   req.params.id
+  DOES: logic.completeRequest: closed request with a winner -> "completed" (reviews unlock).
+  OUT:  success -> /owner-requests, otherwise 404 / 403 / 400.
+*/
+app.post('/requests/:id/complete', ownerOnly, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.completeRequest(user.id, toId(req.params.id));
+  if (!result.ok) {
+    return sendError(res, result, '/owner-requests', user);
+  }
+  res.redirect('/owner-requests');
+});
 
 /* =====================================================================
    6. PROVIDER ROUTES (logged in + userType "carer")
