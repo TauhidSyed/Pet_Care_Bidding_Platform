@@ -60,26 +60,42 @@ Why POST for edit/withdraw instead of PUT/DELETE: a plain HTML `<form>` can only
 ## Status rules
 
 - Request: `open` → `closed` (winner picked, or owner closed it) → `completed` (only if there is a winner).
-- Bid: `pending` → `accepted` / `rejected` (when the owner picks) or `withdrawn` (by the provider).
-- Bids can be placed, edited or withdrawn only while the request is `open` **and** before its `deadline`.
+- Bid: `active` → `accepted` / `rejected` (when the owner picks) or `withdrawn` (by the provider).
+- The winner of a request is its `accepted` bid (there is no separate winner column).
+- Bids can be placed, edited or withdrawn only while the request is `open` **and** before its `bidding_deadline`.
 
 ## Front-end changes
 
 See **FRONTEND_CHANGES.md**.
 
-## Notes for the DB teammate (data.js vs pet_care_schema.sql)
+## Database (Prisma 6 + MySQL)
 
-Every array read and write in `logic.js` is marked `// DB: replace with prisma call (...)`. Some names differ between `data.js` and the SQL schema:
+All database code is in `logic.js`, using the tables from `pet_care_schema.sql` with no changes to the schema. The code uses the schema's column names directly. Form field names (left) are copied into these columns (right):
 
-| data.js | schema | Note |
-|---|---|---|
-| `userType` | `role` | same values (owner/carer) |
-| `password` (holds the bcrypt hash) | `password_hash` | |
-| `petName`, `petBreed`, `petAge`, `petPhoto` | `name`, `breed`, `age_years`, `photo_url` | |
-| `startTime`, `endTime`, `deadline` | `service_start`, `service_end`, `bidding_deadline` | |
-| `winningBidId` on requests | **missing** | add a nullable `winning_bid_id`, or find the bid with status `accepted` |
-| `tags` (one space-separated string) | `request_tags` table | split on spaces when saving |
-| `carerId`, `bidPrice`, `bidDescription` | `provider_id`, `proposed_price`, `description` | |
-| bid status `pending` | `active` | rename one side. Schema also has request statuses `assigned` / `cancelled` that the app doesn't use |
+| Form field (`req.body`) | Database column |
+|---|---|
+| `userType` | `users.role` |
+| `password` (hashed with bcrypt) | `users.password_hash` |
+| `providerService`, `providerExperience` | `users.provider_service`, `users.provider_experience` |
+| `petName`, `petType`, `petBreed`, `petAge`, `petPhoto` | `pets.name`, `pets.pet_type`, `pets.breed`, `pets.age_years`, `pets.photo_url` |
+| `startTime`, `endTime`, `deadline` | `care_requests.service_start`, `service_end`, `bidding_deadline` |
+| `tags` (space-separated) | one row per tag in `request_tags` |
+| `bidPrice`, `bidDescription` | `bids.proposed_price`, `bids.description` |
+| `requestId`, `rating`, `comment` | `reviews.request_id`, `rating`, `comment` (`reviewee_id` is worked out automatically) |
 
-Re-bidding after a withdraw reuses the same bid row, so the schema's `UNIQUE (request_id, provider_id)` is respected.
+- Re-bidding after a withdraw reuses the same bid row, so `UNIQUE (request_id, provider_id)` is respected.
+- Request statuses `assigned` and `cancelled` exist in the schema but the app doesn't use them.
+
+## Running the backend on a fresh computer
+
+1. Install Node.js and MySQL 8, and make sure the MySQL service is running.
+2. `npm install`
+3. Copy `.env.example` to `.env` and put your MySQL username and password in `DATABASE_URL`. `.env` is gitignored, so never commit it.
+4. Create the database: `mysql -u root -p < pet_care_schema.sql`
+5. `npx prisma generate` (builds the Prisma client from `prisma/schema.prisma`)
+6. `npm run seed` loads the sample data. **This deletes everything in the database first.**
+7. `npm start`, then open http://127.0.0.1:3000/. Sample logins: `umar_owner`, `lina_owner`, `aisha_k`, `sam_r`, all with password `password123`.
+
+`npm test` reseeds the database and runs the logic tests.
+
+If `pet_care_schema.sql` changes: rerun it, then `npx prisma db pull` and `npx prisma generate`.

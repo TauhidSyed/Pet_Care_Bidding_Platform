@@ -5,7 +5,7 @@
   WARNING: it first DELETES everything in the database, then adds the sample data again.
   So it's for development/testing only, never for real users.
 
-  It adds the same sample data our old data.js had:
+  It adds our standard sample data:
     users:    1 umar_owner (owner), 2 aisha_k (carer), 3 sam_r (carer), 4 lina_owner (owner)
               -> all with the password: password123 (saved as a bcrypt hash)
     pets:     1 Cloud (umar), 2 Rocky (umar), 3 Kiwi (lina)
