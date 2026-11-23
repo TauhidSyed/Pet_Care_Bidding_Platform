@@ -1,5 +1,5 @@
-// We have decided to heavily document only the validation for the first form. 
-// Anything unique after that will be handled in its own seperate comment. 
+// We have decided to heavily document only the validation for the first form.
+// Anything unique after that will be handled in its own seperate comment.
 // Therefore once it is covered, then it will most likely not touched upon again.
 //*-- Registration Page: ---*/
 const registerForm = document.querySelector("#register-form");
@@ -35,15 +35,12 @@ if (registerForm) {
   for (let i = 0; i < userTypeInputs.length; i++) {
     userTypeInputs[i].addEventListener("change", updateProviderFields);
   }
-  
+
   // T: Press submit button and then start checking for errors:
   registerForm.addEventListener("submit", function (event) {
-    // T: https://www.w3schools.com/jsref/event_preventdefault.asp
-    event.preventDefault();
-    
     // T: The "checked" property sets or returns the checked state of a radio button.
     const role = document.querySelector('input[name="userType"]:checked');
-    
+
     // T: All trims in the future are used to remove whitespace, similar to strip() in Python.
     const username = usernameInput.value.trim();
     const email = emailInput.value.trim();
@@ -52,7 +49,7 @@ if (registerForm) {
 
     // T: We are using an errors array implementation; makes it simpler and easily pastable to add JS validation for all forms.
     const errors = [];
-    
+
     // T: So if its not checked, then error is to choose one.
     if (!role) {
       errors.push("Choose Pet Owner or Care Provider.");
@@ -63,7 +60,7 @@ if (registerForm) {
     if (username.length < 3) {
       errors.push("Username must be at least 3 characters.");
     }
-    
+
     // T: Validity is built-in validation for emails.
     if (email === "" || !emailInput.validity.valid) {
       errors.push("Enter a valid email address.");
@@ -77,13 +74,14 @@ if (registerForm) {
     // T: We push error strings to the errors array, now we make the error message by adding all of the errors value.
     // T: Keep them on new line as well.
     if (errors.length > 0) {
+      // T: https://www.w3schools.com/jsref/event_preventdefault.asp
+      event.preventDefault();
       registerMessage.textContent = errors.join("\n");
       return;
     }
 
     // T: Message here is only for front end part, we will remove it later.
     // T: It is to show that we are validating every field and it gives an approval.
-    registerMessage.textContent = "All fields passed front-end validation.";
   });
 }
 /*-- Login Page: ---*/
@@ -93,7 +91,6 @@ const loginPassword = document.querySelector("#password");
 const loginMessage = document.querySelector("#login-message");
 if (loginForm) {
   loginForm.addEventListener("submit", function (event) {
-    event.preventDefault();
     const errors = [];
     if (loginUsername.value.trim() === "") {
       errors.push("Enter your username.");
@@ -102,9 +99,8 @@ if (loginForm) {
       errors.push("Enter your password.");
     }
     if (errors.length > 0) {
+      event.preventDefault();
       loginMessage.textContent = errors.join("\n");
-    } else {
-      loginMessage.textContent = "Both fields are filled in.";
     }
   });
 }
@@ -119,7 +115,6 @@ const deadlineInput = document.querySelector("#deadline");
 const requestMessage = document.querySelector("#request-message");
 if (requestForm) {
   requestForm.addEventListener("submit", function (event) {
-    event.preventDefault();
     const startTime = new Date(startTimeInput.value);
     const endTime = new Date(endTimeInput.value);
     const deadline = new Date(deadlineInput.value);
@@ -144,7 +139,6 @@ if (requestForm) {
     if (deadlineInput.value === "") {
       errors.push("Choose a bidding deadline.");
     } else {
-
       // T: Set deadline must always be after the current time.
       if (deadline <= new Date()) {
         errors.push("The bidding deadline must be in the future.");
@@ -155,9 +149,8 @@ if (requestForm) {
       }
     }
     if (errors.length > 0) {
+      event.preventDefault();
       requestMessage.textContent = errors.join("\n");
-    } else {
-      requestMessage.textContent = "All request fields passed validation.";
     }
   });
 }
@@ -171,7 +164,6 @@ const petPhotoInput = document.querySelector("#pet-photo");
 const petMessage = document.querySelector("#pet-message");
 if (petForm) {
   petForm.addEventListener("submit", function (event) {
-    event.preventDefault();
     const errors = [];
     if (petNameInput.value.trim().length < 2) {
       errors.push("Enter a pet name with at least 2 characters.");
@@ -195,9 +187,8 @@ if (petForm) {
       errors.push("Enter a valid photo URL.");
     }
     if (errors.length > 0) {
+      event.preventDefault();
       petMessage.textContent = errors.join("\n");
-    } else {
-      petMessage.textContent = "Pet details passed front-end validation.";
     }
   });
 }
@@ -208,7 +199,6 @@ const bidDescriptionInput = document.querySelector("#bid-description");
 const bidMessage = document.querySelector("#bid-message");
 if (bidForm) {
   bidForm.addEventListener("submit", function (event) {
-    event.preventDefault();
     const bidPrice = Number(bidPriceInput.value);
     const bidDescription = bidDescriptionInput.value.trim();
     const errors = [];
@@ -225,49 +215,19 @@ if (bidForm) {
       errors.push("Describe your service in at least 10 characters.");
     }
     if (errors.length > 0) {
+      event.preventDefault();
       bidMessage.textContent = errors.join("\n");
-    } else {
-      bidMessage.textContent = "Bid details passed front-end validation.";
     }
   });
 }
 /*-- Request-details page (CARDS sample data) ---*/
-const requestDetailsCard = document.querySelector("#request-details-card");
-const requestLoadMessage = document.querySelector("#request-load-message");
-const requestPetText = document.querySelector("#request-pet");
-const requestServiceText = document.querySelector("#request-service");
-const requestStartText = document.querySelector("#request-start");
-const requestEndText = document.querySelector("#request-end");
-const requestBudgetText = document.querySelector("#request-budget");
-const requestDeadlineText = document.querySelector("#request-deadline");
-const requestInstructionsText = document.querySelector("#request-instructions");
 
 // T: Hard coded sample request so we can see how request-details looks like.
-const sampleRequest = {
-  pet: "Cloud - Cat",
-  service: "Pe walking",
-  start: "2026-11-12T09:00:00",
-  end: "2026-11-12T10:00:00",
-  budget: 120,
-  deadline: "2026-11-10T18:00:00",
-  instructions:
-    "Cloud is very allergic to earth fire water and air. Please utmost care or we will take legal action!!",
-};
 
 // T: Change the text content of the "p" for each of them.
-if (requestDetailsCard) {
-  requestPetText.textContent = sampleRequest.pet;
-  requestServiceText.textContent = sampleRequest.service;
-  // T: Turns date-text thing into an object that JS can work with.
-  // T: toLocaleString() method returns a Date object as a string, using local settings.
-  requestStartText.textContent = new Date(sampleRequest.start).toLocaleString();
-  requestEndText.textContent = new Date(sampleRequest.end).toLocaleString();
-  requestBudgetText.textContent = "AED " + sampleRequest.budget;
-  requestDeadlineText.textContent = new Date(
-    sampleRequest.deadline,
-  ).toLocaleString();
-  requestInstructionsText.textContent = sampleRequest.instructions;
-}
+// T: Turns date-text thing into an object that JS can work with.
+// T: toLocaleString() method returns a Date object as a string, using local settings.
+
 /*-- Browse-Requests Page ---*/
 const browseRequestCards = document.querySelectorAll(".browse-request-card");
 const requestSearchInput = document.querySelector("#request-search");
@@ -337,7 +297,7 @@ if (browseRequestCards.length > 0) {
 const logoutButtons = document.querySelectorAll("#logout-btn");
 for (let i = 0; i < logoutButtons.length; i++) {
   logoutButtons[i].addEventListener("click", function () {
-    window.location.href = "logged-out.html";
+    window.location.href = "/logout";
   });
 }
 /*----------- X -----------*/
