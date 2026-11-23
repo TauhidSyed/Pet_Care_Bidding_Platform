@@ -144,10 +144,28 @@ function isValidEmail(email) {
 /*
   isValidDate(text)
   true if `text` (e.g. "2026-12-05T09:00" from a datetime-local input) is a real date.
-  new Date('nonsense') gives an "Invalid Date" whose getTime() is NaN (Not a Number).
+  new Date('nonsense') gives an "Invalid Date", which counts as NaN (Not a Number),
+  so isNaN(...) is true for bad dates and false for real ones.
 */
 function isValidDate(text) {
-  return text !== '' && !isNaN(new Date(text).getTime());
+  return text !== '' && !isNaN(new Date(text));
+}
+
+/*
+  beginsWith(text, start)
+  true if `text` starts with `start`, checked one character at a time with a for loop.
+  e.g. beginsWith('https://a.com', 'https://') -> true
+*/
+function beginsWith(text, start) {
+  if (text.length < start.length) {
+    return false;
+  }
+  for (let i = 0; i < start.length; i++) {
+    if (text[i] !== start[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /*
@@ -412,7 +430,7 @@ function addPet(ownerId, body) {
     errors.push("Enter the pet's age as a whole number of 0 or more.");
   }
   // Only allow real web links. This also blocks tricks like "javascript:..." in an <img src>.
-  if (!petPhoto.startsWith('http://') && !petPhoto.startsWith('https://')) {
+  if (!beginsWith(petPhoto, 'http://') && !beginsWith(petPhoto, 'https://')) {
     errors.push('Enter a valid photo URL (starting with http:// or https://).');
   }
   if (errors.length > 0) {
