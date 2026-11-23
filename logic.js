@@ -641,6 +641,7 @@ async function checkOwnRequest(ownerId, requestId) {
          "active" bid ON THIS request (not a withdrawn one, not from another request).
   DOES: chosen bid -> "accepted", every other active bid -> "rejected", request -> "closed".
         (Withdrawn bids stay "withdrawn". The accepted bid IS the winner, no extra column needed.)
+        This is the ONLY way a request gets closed. After that, placeBid refuses new bids.
   PRISMA: bids.update once per bid (a loop), then care_requests.update
   SQL:    UPDATE bids SET status = ? WHERE id = ?;  UPDATE care_requests SET status = 'closed' WHERE id = ?
   OUT: { ok: true, request } or { ok: false, status, error }
@@ -673,37 +674,11 @@ async function selectWinningBid(ownerId, requestId, bidId) {
 }
 
 /*
-  closeRequest(ownerId, requestId)
-  The owner closes a request WITHOUT picking a winner (e.g. no good bids).
-  RULES: your request, and it must still be "open".
-  DOES: request -> "closed", all active bids -> "rejected". After this no one can bid.
-  PRISMA: bids.update in a loop + care_requests.update
-  SQL:    UPDATE bids SET status = 'rejected' WHERE id = ?;  UPDATE care_requests SET status = 'closed' WHERE id = ?
-*/
-async function closeRequest(ownerId, requestId) {
-  const check = await checkOwnRequest(ownerId, requestId);
-  if (!check.ok) {
-    return check;
-  }
-  const request = check.request;
-  if (request.status !== 'open') {
-    return fail(400, ['Only open requests can be closed.']);
-  }
-  const requestBids = await getBidsForRequest(request.id);
-  for (let i = 0; i < requestBids.length; i++) {
-    if (requestBids[i].status === 'active') {
-      await prisma.bids.update({ where: { id: requestBids[i].id }, data: { status: 'rejected' } });
-    }
-  }
-  const updated = await prisma.care_requests.update({ where: { id: request.id }, data: { status: 'closed' } });
-  return { ok: true, request: updated };
-}
-
-/*
   completeRequest(ownerId, requestId)
   The owner marks the service as done.
-  RULES: your request, status must be "closed" AND there must be a winning (accepted) bid
-         (you can't "complete" a request nobody was hired for).
+  RULES: your request, status must be "closed" AND there must be a winning (accepted) bid.
+         (Choosing a winner is the only way a request becomes "closed", so a closed request
+         always has a winner; we still check, to be safe.)
   DOES: request -> "completed". Now both sides can leave reviews.
   PRISMA: care_requests.update({ where: { id }, data: { status: 'completed' } })
   SQL:    UPDATE care_requests SET status = 'completed' WHERE id = ?
@@ -1210,7 +1185,6 @@ module.exports = {
   createRequest: createRequest,
   getOwnerRequests: getOwnerRequests,
   selectWinningBid: selectWinningBid,
-  closeRequest: closeRequest,
   completeRequest: completeRequest,
   browseRequests: browseRequests,
   getRequestDetails: getRequestDetails,

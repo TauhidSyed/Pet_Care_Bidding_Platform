@@ -1,16 +1,11 @@
 # Pet_Care_Bidding_Platform
 
-WebDev Project.
+Assalamu Alaikum!
 
-Current branches:
 
-J (Was supposed to be HTML-focused, ended up having to do more than that, unfortunately)
 
-Tauhid
 
-commit test 1:
-
-Hello!
+--------------------------------------------
 If you are reading this while grading the submission. Here are some additional notes:
 (1) Since we do not have a backeend or DB, we are using a lot of sample data and submitted info is not saved
 
