@@ -8,5 +8,10 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "prisma": "^6.19.3"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "test": "node seed.js && node test.js"
   }
 }
