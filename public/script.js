@@ -231,43 +231,6 @@ if (bidForm) {
     }
   });
 }
-/*-- Request-details page (CARDS sample data) ---*/
-const requestDetailsCard = document.querySelector("#request-details-card");
-const requestLoadMessage = document.querySelector("#request-load-message");
-const requestPetText = document.querySelector("#request-pet");
-const requestServiceText = document.querySelector("#request-service");
-const requestStartText = document.querySelector("#request-start");
-const requestEndText = document.querySelector("#request-end");
-const requestBudgetText = document.querySelector("#request-budget");
-const requestDeadlineText = document.querySelector("#request-deadline");
-const requestInstructionsText = document.querySelector("#request-instructions");
-
-// T: Hard coded sample request so we can see how request-details looks like.
-const sampleRequest = {
-  pet: "Cloud - Cat",
-  service: "Pe walking",
-  start: "2026-11-12T09:00:00",
-  end: "2026-11-12T10:00:00",
-  budget: 120,
-  deadline: "2026-11-10T18:00:00",
-  instructions:
-    "Cloud is very allergic to earth fire water and air. Please utmost care or we will take legal action!!",
-};
-
-// T: Change the text content of the "p" for each of them.
-if (requestDetailsCard) {
-  requestPetText.textContent = sampleRequest.pet;
-  requestServiceText.textContent = sampleRequest.service;
-  // T: Turns date-text thing into an object that JS can work with.
-  // T: toLocaleString() method returns a Date object as a string, using local settings.
-  requestStartText.textContent = new Date(sampleRequest.start).toLocaleString();
-  requestEndText.textContent = new Date(sampleRequest.end).toLocaleString();
-  requestBudgetText.textContent = "AED " + sampleRequest.budget;
-  requestDeadlineText.textContent = new Date(
-    sampleRequest.deadline,
-  ).toLocaleString();
-  requestInstructionsText.textContent = sampleRequest.instructions;
-}
 /*-- Browse-Requests Page ---*/
 const browseRequestCards = document.querySelectorAll(".browse-request-card");
 const requestSearchInput = document.querySelector("#request-search");
