@@ -896,7 +896,133 @@ function getCarerBids(carerId) {
 }
 
 
-/* ---- (more sections are added below: reviews, dashboards) ---- */
+/* =====================================================================
+   REVIEWS
+   ===================================================================== */
+
+/*
+  getReviewPartner(request, userId)
+  On a completed request, the two people involved are the owner and the winning provider.
+  OUT: the id of the OTHER person (the one userId would review), or null if userId
+       wasn't part of this request.
+*/
+function getReviewPartner(request, userId) {
+  const winningBid = findBidById(request.winningBidId);
+  if (winningBid === null) {
+    return null;
+  }
+  if (userId === request.ownerId) {
+    return winningBid.carerId;
+  }
+  if (userId === winningBid.carerId) {
+    return request.ownerId;
+  }
+  return null;
+}
+
+/*
+  hasReviewed(requestId, reviewerId)
+  true if this person already left a review for this request (only one allowed each).
+*/
+function hasReviewed(requestId, reviewerId) {
+  for (let i = 0; i < data.reviews.length; i++) { // DB: replace with prisma call (prisma.review.findUnique by requestId + reviewerId)
+    if (data.reviews[i].requestId === requestId && data.reviews[i].reviewerId === reviewerId) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*
+  addReview(reviewerId, body)
+  Leave a review after a completed service.
+  IN:  reviewerId (session), body = review form: requestId, rating, comment
+  RULES: request exists and is "completed", you are its owner or its winning provider (403 otherwise),
+         rating is a whole number 1 to 5, comment at most 1000 characters (optional),
+         and you haven't reviewed this request yet.
+  DOES: saves the review about the OTHER person (owner reviews provider, provider reviews owner).
+  OUT: { ok: true, review } or { ok: false, status, error }
+*/
+function addReview(reviewerId, body) {
+  const requestId = parseInt(body.requestId);
+  const ratingText = cleanText(body.rating);
+  const rating = Number(ratingText);
+  const comment = cleanText(body.comment);
+
+  const errors = [];
+  const request = findRequestById(requestId);
+  if (request === null || request.status !== 'completed') {
+    errors.push('Choose one of your completed services.');
+  }
+  if (ratingText === '' || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+    errors.push('Choose a rating from 1 to 5.');
+  }
+  if (comment.length > 1000) {
+    errors.push('Keep the comment under 1000 characters.');
+  }
+  if (errors.length > 0) {
+    return fail(400, errors);
+  }
+
+  const revieweeId = getReviewPartner(request, reviewerId);
+  if (revieweeId === null) {
+    return fail(403, ['You can only review services you were part of.']);
+  }
+  if (hasReviewed(request.id, reviewerId)) {
+    return fail(400, ['You already reviewed this service.']);
+  }
+
+  const newReview = {
+    id: nextId(data.reviews), // DB: replace with prisma call (id comes from AUTO_INCREMENT)
+    requestId: request.id,
+    reviewerId: reviewerId,
+    revieweeId: revieweeId,
+    rating: rating,
+    comment: comment
+  };
+  data.reviews.push(newReview); // DB: replace with prisma call (prisma.review.create)
+  return { ok: true, review: newReview };
+}
+
+/*
+  getReviewsPage(userId)
+  Everything the Reviews page needs.
+  OUT: { ok: true, about, written, reviewable }
+       - about:      reviews other people wrote about me   [{ review, reviewer, request, pet }]
+       - written:    reviews I wrote                        [{ review, reviewee, request, pet }]
+       - reviewable: my completed requests I haven't reviewed yet  [{ request, pet, partner }]
+*/
+function getReviewsPage(userId) {
+  const about = [];
+  const written = [];
+  for (let i = 0; i < data.reviews.length; i++) { // DB: replace with prisma call (prisma.review.findMany where reviewerId or revieweeId)
+    const review = data.reviews[i];
+    const request = findRequestById(review.requestId);
+    const pet = findPetById(request.petId);
+    if (review.revieweeId === userId) {
+      about.push({ review: review, reviewer: findUserById(review.reviewerId), request: request, pet: pet });
+    }
+    if (review.reviewerId === userId) {
+      written.push({ review: review, reviewee: findUserById(review.revieweeId), request: request, pet: pet });
+    }
+  }
+
+  const reviewable = [];
+  for (let i = 0; i < data.requests.length; i++) { // DB: replace with prisma call (prisma.careRequest.findMany where status completed)
+    const request = data.requests[i];
+    if (request.status !== 'completed') {
+      continue;
+    }
+    const partnerId = getReviewPartner(request, userId);
+    if (partnerId !== null && !hasReviewed(request.id, userId)) {
+      reviewable.push({ request: request, pet: findPetById(request.petId), partner: findUserById(partnerId) });
+    }
+  }
+  return { ok: true, about: about, written: written, reviewable: reviewable };
+}
+
+
+/* ---- (more sections are added below: dashboards) ---- */
 
 
 /*
@@ -925,5 +1051,7 @@ module.exports = {
   placeBid: placeBid,
   editBid: editBid,
   withdrawBid: withdrawBid,
-  getCarerBids: getCarerBids
+  getCarerBids: getCarerBids,
+  addReview: addReview,
+  getReviewsPage: getReviewsPage
 };

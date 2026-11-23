@@ -434,8 +434,31 @@ app.get('/requests/:id', authentication, function (req, res) {
   }
   res.send(pages.requestDetailsPage(user, result));
 });
-// TODO(Umar): GET  /reviews                   -> reviews about me + form listing my completed requests
-// TODO(Umar): POST /reviews                   -> validate rating 1-5, request must be completed and involve me
+/*
+  GET /reviews
+  OUT: the Reviews page: reviews about me, reviews I wrote, and a form listing
+       my completed services that I haven't reviewed yet.
+*/
+app.get('/reviews', authentication, function (req, res) {
+  const user = getCurrentUser(req);
+  res.send(pages.reviewsPage(user, logic.getReviewsPage(user.id)));
+});
+
+/*
+  POST /reviews
+  IN:   req.body: requestId, rating, comment
+  DOES: logic.addReview: request must be completed, you must be its owner or winning provider,
+        rating 1-5, one review per person per request.
+  OUT:  success -> /reviews. Not part of it -> 403. Invalid -> 400.
+*/
+app.post('/reviews', authentication, function (req, res) {
+  const user = getCurrentUser(req);
+  const result = logic.addReview(user.id, req.body);
+  if (!result.ok) {
+    return sendError(res, result, '/reviews', user);
+  }
+  res.redirect('/reviews');
+});
 
 //app.use(authentication, express.static(path.join(__dirname, 'private')));
 // J: Authentications here for the rest of the files. Need to define a function called "authentication" for this to work.

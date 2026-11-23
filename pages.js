@@ -585,7 +585,95 @@ function bidsPage(user, items) {
 }
 
 
-/* ---- (more pages are added below: reviews, dashboards) ---- */
+/* =====================================================================
+   REVIEWS PAGE
+   ===================================================================== */
+
+// 4 -> "★★★★☆" (filled stars for the rating, empty stars for the rest, out of 5)
+function stars(rating) {
+  let text = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= rating) {
+      text += '★';
+    } else {
+      text += '☆';
+    }
+  }
+  return text;
+}
+
+/*
+  reviewsPage(user, info)
+  info comes from logic.getReviewsPage: { about, written, reviewable }.
+  Left: reviews about me + reviews I wrote. Right: the "Leave a Review" form, whose
+  dropdown only lists my completed services that I haven't reviewed yet.
+  The form posts to POST /reviews (fields: requestId, rating, comment).
+*/
+function reviewsPage(user, info) {
+  let html = pageStart('Reviews', 'Reviews', 'Feedback from completed care services.', user);
+  html += '<div class="row g-4">';
+
+  html += '<div class="col-12 col-lg-7"><section class="card p-4 mb-4"><h2 class="card-title">Reviews About You</h2>';
+  if (info.about.length === 0) {
+    html += '<p class="text-muted mb-0">No reviews yet.</p>';
+  }
+  for (let i = 0; i < info.about.length; i++) {
+    const item = info.about[i];
+    html += '<div class="card p-3 mb-3">';
+    html += '<h3 class="h5">' + escapeHtml(item.reviewer.username) + ' <span class="text-warning">' + stars(item.review.rating) + '</span></h3>';
+    html += '<p class="mb-1">' + escapeHtml(item.review.comment) + '</p>';
+    html += '<p class="text-muted mb-0">' + serviceLabel(item.request.service) + ' for ' + escapeHtml(item.pet.petName) + '</p>';
+    html += '</div>';
+  }
+  html += '</section>';
+
+  html += '<section class="card p-4"><h2 class="card-title">Reviews You Wrote</h2>';
+  if (info.written.length === 0) {
+    html += '<p class="text-muted mb-0">You have not written any reviews yet.</p>';
+  }
+  for (let i = 0; i < info.written.length; i++) {
+    const item = info.written[i];
+    html += '<div class="card p-3 mb-3">';
+    html += '<h3 class="h5">About ' + escapeHtml(item.reviewee.username) + ' <span class="text-warning">' + stars(item.review.rating) + '</span></h3>';
+    html += '<p class="mb-1">' + escapeHtml(item.review.comment) + '</p>';
+    html += '<p class="text-muted mb-0">' + serviceLabel(item.request.service) + ' for ' + escapeHtml(item.pet.petName) + '</p>';
+    html += '</div>';
+  }
+  html += '</section></div>';
+
+  html += '<div class="col-12 col-lg-5">';
+  if (info.reviewable.length === 0) {
+    html += '<section class="card p-4"><h2 class="card-title">Leave a Review</h2>';
+    html += '<p class="text-muted mb-0">You can leave a review once one of your services is completed.</p></section>';
+  } else {
+    const ids = [];
+    const labels = [];
+    for (let i = 0; i < info.reviewable.length; i++) {
+      const item = info.reviewable[i];
+      ids.push(String(item.request.id));
+      labels.push(serviceLabel(item.request.service) + ' for ' + item.pet.petName + ' (with ' + item.partner.username + ')');
+    }
+    html += '<form id="review-form" action="/reviews" method="POST">';
+    html += '<h2 class="card-title">Leave a Review</h2>';
+    html += '<div class="mb-3"><label for="review-service" class="form-label">Completed service:</label>';
+    html += '<select class="form-select" id="review-service" name="requestId" required><option value="">Choose a service</option>' + optionsHtml(ids, labels, '') + '</select></div>';
+    html += '<div class="mb-3"><label for="review-rating" class="form-label">Rating:</label>';
+    html += '<select class="form-select" id="review-rating" name="rating" required><option value="">Choose a rating</option>';
+    html += optionsHtml(['5', '4', '3', '2', '1'], ['5 - Excellent', '4 - Good', '3 - Okay', '2 - Poor', '1 - Very poor'], '') + '</select></div>';
+    html += '<div class="mb-3"><label for="review-comment" class="form-label">Comment:</label>';
+    html += '<textarea class="form-control" id="review-comment" name="comment" rows="4" maxlength="1000"></textarea></div>';
+    html += '<p id="review-message" style="color: red"></p>';
+    html += '<button type="submit" class="btn btn-primary">Submit Review</button>';
+    html += '</form>';
+  }
+  html += '</div></div>';
+
+  html += pageEnd();
+  return html;
+}
+
+
+/* ---- (more pages are added below: dashboards) ---- */
 
 
 // module.exports: lets server.js use these functions with require('./pages').
@@ -597,5 +685,6 @@ module.exports = {
   ownerRequestsPage: ownerRequestsPage,
   browsePage: browsePage,
   requestDetailsPage: requestDetailsPage,
-  bidsPage: bidsPage
+  bidsPage: bidsPage,
+  reviewsPage: reviewsPage
 };
