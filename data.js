@@ -7,6 +7,11 @@
 //
 // Today's date while writing this: 2026-11-22. Deadlines below are set around that date.
 
+// All sample users have the password: password123
+// We never store the real password, only its bcrypt hash (see logic.js -> registerUser).
+// This hash was made once with: bcrypt.hashSync('password123', 10)
+const SAMPLE_HASH = '$2b$10$7I//ddTNgKqbBNgYyUTUbervfbWBoqF23xK5bvlgwLEfy.pUHlBuO';
+
 // ---------------- USERS (register.html) ----------------
 const users = [
   {
@@ -14,7 +19,7 @@ const users = [
     userType: 'owner',           // "owner" or "carer" (same values as the radio buttons in register.html)
     username: 'umar_owner',      // must be unique, used to log in
     email: 'umar@example.com',   // must be unique
-    password: 'password123',     // PLAIN TEXT FOR NOW. In the login step we switch this to a bcrypt hash.
+    password: SAMPLE_HASH,       // bcrypt hash (scrambled version) of the password, never the real password
     providerService: '',         // only for carers: "walking" / "bathing" / "grooming"
     providerExperience: ''       // only for carers: free text, optional
   },
@@ -23,7 +28,7 @@ const users = [
     userType: 'carer',
     username: 'aisha_k',
     email: 'aisha@example.com',
-    password: 'password123',
+    password: SAMPLE_HASH,
     providerService: 'walking',
     providerExperience: '3 years walking dogs and cats in Sharjah.'
   },
@@ -32,9 +37,19 @@ const users = [
     userType: 'carer',
     username: 'sam_r',
     email: 'sam@example.com',
-    password: 'password123',
+    password: SAMPLE_HASH,
     providerService: 'grooming',
     providerExperience: 'Certified groomer, gentle with nervous pets.'
+  },
+  {
+    // A second owner, so we can test that owners can't touch each other's pets/requests.
+    id: 4,
+    userType: 'owner',
+    username: 'lina_owner',
+    email: 'lina@example.com',
+    password: SAMPLE_HASH,
+    providerService: '',
+    providerExperience: ''
   }
 ];
 
@@ -57,6 +72,15 @@ const pets = [
     petBreed: 'Golden Retriever',
     petAge: 5,
     petPhoto: 'https://placedog.net/300/300'
+  },
+  {
+    id: 3,
+    ownerId: 4,                  // belongs to lina_owner
+    petName: 'Kiwi',
+    petType: 'other',
+    petBreed: 'Budgie',
+    petAge: 1,
+    petPhoto: 'https://example.com/kiwi.jpg'
   }
 ];
 
@@ -103,6 +127,20 @@ const requests = [
     tags: 'bath quick',
     status: 'completed',
     winningBidId: 4
+  },
+  {
+    id: 4,
+    ownerId: 4,                       // lina_owner's request
+    petId: 3,
+    service: 'feeding',
+    startTime: '2026-12-10T08:00',
+    endTime: '2026-12-10T08:30',
+    budget: 60,
+    deadline: '2026-12-08T18:00',
+    instructions: 'Seeds in the blue jar, fresh water daily.',
+    tags: 'bird budgie dubai',
+    status: 'open',
+    winningBidId: null
   }
 ];
 
