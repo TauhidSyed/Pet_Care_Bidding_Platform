@@ -25,42 +25,29 @@
           <section class="card p-4">
             <h2 class="card-title">Provider Reviews</h2>
 
-            <div class="card p-3 mb-3">
-              <h3 class="h5">
-                Tinker Manuel <span class="text-warning">★★★★★</span>
-              </h3>
-              <p class="mb-1">Cloud started speaking English.</p>
-              <p class="text-muted mb-0">Pet walking for Cloud</p>
-            </div>
-
-            <div class="card p-3">
-              <h3 class="h5">
-                Sam Sung. <span class="text-warning">★★★★☆</span>
-              </h3>
-              <p class="mb-1">Wow he was awesome.</p>
-              <p class="text-muted mb-0">Pet feeding for Rocks</p>
-            </div>
+            <!-- REVIEW_LIST -->
+            <!-- /REVIEW_LIST -->
           </section>
         </div>
 
         <div class="col-12 col-lg-5">
-          <form id="review-form" novalidate>
+          <form id="review-form" novalidate action="/reviews" method="post">
             <h2 class="card-title">Leave a Review</h2>
 
             <div class="mb-3">
               <label for="review-service" class="form-label">
                 Completed service:
               </label>
-              <select class="form-select" id="review-service">
+              <select class="form-select" id="review-service" name="requestId">
                 <option value="">Choose a service</option>
-                <option value="cloud-walk">Pet walking for Cloud</option>
-                <option value="rocky-feeding">Pet feeding for Rocky</option>
+                <!-- REVIEW_OPTIONS -->
+                <!-- /REVIEW_OPTIONS -->
               </select>
             </div>
 
             <div class="mb-3">
               <label for="review-rating" class="form-label">Rating:</label>
-              <select class="form-select" id="review-rating">
+              <select class="form-select" id="review-rating" name="rating">
                 <option value="">Choose a rating</option>
                 <option value="5">5 - Excellent</option>
                 <option value="4">4 - Good</option>
@@ -75,6 +62,7 @@
               <textarea
                 class="form-control"
                 id="review-comment"
+                name="comment"
                 rows="4"
               ></textarea>
             </div>
